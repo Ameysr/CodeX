@@ -68,73 +68,134 @@ const createProblem = async (req,res)=>{
     }
 }
 
-const updateProblem = async (req,res)=>{
-    
-  const {id} = req.params;
-  const {title,description,difficulty,tags,
-    visibleTestCases,hiddenTestCases,startCode,
-    referenceSolution, problemCreator
-   } = req.body;
 
-  try{
-
-     if(!id){
-      return res.status(400).send("Missing ID Field");
-     }
-
-    const DsaProblem =  await Problem.findById(id);
-    if(!DsaProblem)
-    {
-      return res.status(404).send("ID is not persent in server");
-    }
-      
-    for(const {language,completeCode} of referenceSolution){
-         
-
-      // source_code:
-      // language_id:
-      // stdin: 
-      // expectedOutput:
-
-      const languageId = getLanguageById(language);
+const updateProblem = async (req, res) => {
+    try {
+        const { id } = req.params;
         
-      // I am creating Batch submission
-      const submissions = visibleTestCases.map((testcase)=>({
-          source_code:completeCode,
-          language_id: languageId,
-          stdin: testcase.input,
-          expected_output: testcase.output
-      }));
+        // Check if request body exists
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return res.status(400).json({ 
+                error: "Request body is missing or empty" 
+            });
+        }
 
+        // Destructure with default values to prevent undefined errors
+        const {
+            title = '',
+            description = '',
+            difficulty = '',
+            tags = [],
+            visibleTestCases = [],
+            hiddenTestCases = [],
+            startCode = [],
+            referenceSolution = [],
+            problemCreator
+        } = req.body;
 
-      const submitResult = await submitBatch(submissions);
-      // console.log(submitResult);
+        // Validate required fields
+        if (!title || !description || !difficulty) {
+            return res.status(400).json({ 
+                error: "Missing required fields: title, description, or difficulty" 
+            });
+        }
 
-      const resultToken = submitResult.map((value)=> value.token);
+        if (!id) {
+            return res.status(400).json({ 
+                error: "Missing ID parameter" 
+            });
+        }
 
-      // ["db54881d-bcf5-4c7b-a2e3-d33fe7e25de7","ecc52a9b-ea80-4a00-ad50-4ab6cc3bb2a1","1b35ec3b-5776-48ef-b646-d5522bdeb2cc"]
-      
-     const testResult = await submitToken(resultToken);
+        // Check if problem exists
+        const dsaProblem = await Problem.findById(id);
+        if (!dsaProblem) {
+            return res.status(404).json({ 
+                error: "Problem not found" 
+            });
+        }
 
-    //  console.log(testResult);
+        // Validate referenceSolution array
+        if (!Array.isArray(referenceSolution) || referenceSolution.length === 0) {
+            return res.status(400).json({ 
+                error: "Reference solution is required and must be an array" 
+            });
+        }
 
-     for(const test of testResult){
-      if(test.status_id!=3){
-       return res.status(400).send("Error Occured");
-      }
-     }
+        // Validate visibleTestCases array
+        if (!Array.isArray(visibleTestCases) || visibleTestCases.length === 0) {
+            return res.status(400).json({ 
+                error: "Visible test cases are required and must be an array" 
+            });
+        }
 
+        // Test reference solutions against visible test cases
+        for (const solution of referenceSolution) {
+            // Validate solution structure
+            if (!solution.language || !solution.completeCode) {
+                return res.status(400).json({ 
+                    error: "Each reference solution must have 'language' and 'completeCode' properties" 
+                });
+            }
+
+            const { language, completeCode } = solution;
+            const languageId = getLanguageById(language);
+            
+            if (!languageId) {
+                return res.status(400).json({ 
+                    error: `Unsupported language: ${language}` 
+                });
+            }
+
+            // Create batch submission for testing
+            const submissions = visibleTestCases.map((testcase) => {
+                // Validate test case structure
+                if (!testcase.input !== undefined && !testcase.output) {
+                    throw new Error("Each test case must have 'input' and 'output' properties");
+                }
+                
+                return {
+                    source_code: completeCode,
+                    language_id: languageId,
+                    stdin: testcase.input,
+                    expected_output: testcase.output
+                };
+            });
+
+            const submitResult = await submitBatch(submissions);
+            const resultTokens = submitResult.map((value) => value.token);
+            const testResults = await submitToken(resultTokens);
+
+            // Check if all tests passed
+            for (const test of testResults) {
+                if (test.status_id !== 3) {
+                    return res.status(400).json({ 
+                        error: `Reference solution failed for language ${language}`,
+                        details: test
+                    });
+                }
+            }
+        }
+
+        // Update the problem
+        const updatedProblem = await Problem.findByIdAndUpdate(
+            id, 
+            { ...req.body }, 
+            { runValidators: true, new: true }
+        );
+
+        res.status(200).json({
+            message: "Problem updated successfully",
+            problem: updatedProblem
+        });
+
+    } catch (err) {
+        console.error('Update problem error:', err);
+        res.status(500).json({ 
+            error: "Internal server error",
+            details: err.message 
+        });
     }
-
-
-  const newProblem = await Problem.findByIdAndUpdate(id , {...req.body}, {runValidators:true, new:true});
-   
-  res.status(200).send(newProblem);
-  }
-  catch(err){
-      res.status(500).send("Error: "+err);
-  }
-}
+};
 
 const deleteProblem = async(req,res)=>{
 

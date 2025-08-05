@@ -375,20 +375,37 @@ return (
         )}
       </div>
       
-      <div className="flex flex-col items-end">
-        {contest && (
-          <div className="text-sm font-semibold text-blue-400">
-            {contest.title}
+      <div className="flex items-center gap-6">
+        {/* TIMER DISPLAY - Added this section */}
+        {participantData?.startTime && !participantData?.endTime && (
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg border" style={{ backgroundColor: "#181C1F", border:"0.1px solid oklch(1 0 0 / 0.3)" }}>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">⏱️</span>
+              <div className="flex flex-col items-center">
+                <span className="text-sm text-gray-400">Time Elapsed</span>
+                <span className="text-lg font-mono font-bold text-yellow-400">
+                  {formatTime(elapsedTime)}
+                </span>
+              </div>
+            </div>
           </div>
         )}
-        {contest && (
-          <div className="text-xs text-gray-400">
-            Ends: {new Date(contest.endDate).toLocaleTimeString([], { 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
-          </div>  
-        )}
+        
+        <div className="flex flex-col items-end">
+          {contest && (
+            <div className="text-sm font-semibold text-blue-400">
+              {contest.title}
+            </div>
+          )}
+          {contest && (
+            <div className="text-xs text-gray-400">
+              Ends: {new Date(contest.endDate).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </div>  
+          )}
+        </div>
       </div>
     </div>
 
@@ -683,7 +700,7 @@ return (
                   />
                 </div>
 
-                {/* Run results display - ADDED THIS SECTION */}
+                {/* Run results display */}
                 {runResult && (
                   <div className={`p-6 rounded-xl border shadow-lg mx-4 my-4 ${
                     runResult.success 
