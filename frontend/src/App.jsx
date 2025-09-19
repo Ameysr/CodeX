@@ -19,6 +19,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import VerifyOTPPage from "./pages/VerifyOTPPage";
 import AdminVideo from "./components/AdminVideo";
 import AdminUpload from "./components/AdminUpload";
+import VideoTester from "./components/VideoTester";
 import PromotePage from "./pages/PromotePage";
 import MainPage from "./pages/MainPage";
 import Resume from "./pages/Resume";
@@ -66,6 +67,7 @@ function App(){
       <Route path="/resume" element={<Resume />} />
       <Route path="/admin/video" element={isAuthenticated && user?.role === 'admin' ? <AdminVideo /> : <Navigate to="/" />} />
       <Route path="/admin/upload/:problemId" element={isAuthenticated && user?.role === 'admin' ? <AdminUpload /> : <Navigate to="/" />} />
+      <Route path="/video-test" element={isAuthenticated ? <VideoTester /> : <Navigate to="/login" />} />
       <Route path="/admin/delete-contest" element={isAuthenticated && user?.role === 'admin' ? <AdminDeleteContest /> : <Navigate to="/" />} />
       <Route path="/admin/delete-promo" element={isAuthenticated && user?.role === 'admin' ? <AdminPromoManager /> : <Navigate to="/" />} />
     </Routes>

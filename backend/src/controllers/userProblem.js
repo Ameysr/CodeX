@@ -2,6 +2,8 @@ const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtili
 const Problem = require("../models/problem");
 const User = require("../models/user");
 const Submission = require("../models/submission");
+const SolutionVideo = require("../models/solutionVideo");
+const cloudinary = require('cloudinary').v2;
 
 const createProblem = async (req,res)=>{
    
@@ -230,11 +232,40 @@ const getProblemById = async(req,res)=>{
 
     const getProblem = await Problem.findById(id).select('_id title description difficulty tags visibleTestCases startCode referenceSolution studyMaterial');
    
-   if(!getProblem)
-    return res.status(404).send("Problem is Missing");
+    if(!getProblem)
+      return res.status(404).send("Problem is Missing");
 
+    // Get solution video if exists
+    const solutionVideo = await SolutionVideo.findOne({ problemId: id });
+    
+    let videoData = null;
+    if (solutionVideo) {
+      // Generate optimized video URL
+      const optimizedVideoUrl = cloudinary.url(solutionVideo.cloudinaryPublicId, {
+        resource_type: 'video',
+        transformation: [
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      });
 
-   res.status(200).send(getProblem);
+      videoData = {
+        id: solutionVideo._id,
+        videoUrl: optimizedVideoUrl,
+        secureUrl: solutionVideo.secureUrl,
+        thumbnailUrl: solutionVideo.thumbnailUrl,
+        duration: solutionVideo.duration,
+        createdAt: solutionVideo.createdAt
+      };
+    }
+
+    // Include video data in response
+    const problemWithVideo = {
+      ...getProblem.toObject(),
+      solutionVideo: videoData
+    };
+
+    res.status(200).send(problemWithVideo);
   }
   catch(err){
     res.status(500).send("Error: "+err);

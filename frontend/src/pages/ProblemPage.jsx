@@ -247,6 +247,7 @@ const ProblemPage = () => {
         const newCode = savedCode || initialCodeObj.initialCode;
         
         setProblem(response.data);
+        console.log('Problem data with video:', response.data); // Debug log
         setCode(newCode);
         lastSavedCode.current = newCode; // Update the reference
         
@@ -751,8 +752,28 @@ const handleRun = async () => {
                 {activeLeftTab === "editorial" && (
                   <div className="space-y-6">
                     <div className="border-b border-gray-700 pb-4">
-                      <h2 className="text-2xl font-bold text-purple-400 mb-2">Comming soon</h2>
+                      <h2 className="text-2xl font-bold text-purple-400 mb-2">Solution Video</h2>
+                      <p className="text-gray-400">Watch the solution explanation</p>
                     </div>
+                    
+                    {problem?.solutionVideo ? (
+                      <div className="space-y-4">
+                        <Editorial 
+                          secureUrl={problem.solutionVideo.videoUrl}
+                          thumbnailUrl={problem.solutionVideo.thumbnailUrl}
+                          duration={problem.solutionVideo.duration}
+                        />
+                        <div className="text-sm text-gray-400 text-center">
+                          Duration: {Math.floor(problem.solutionVideo.duration / 60)}:{String(Math.floor(problem.solutionVideo.duration % 60)).padStart(2, '0')}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="text-6xl mb-4">🎥</div>
+                        <h3 className="text-xl font-semibold text-gray-300 mb-2">No Solution Video Available</h3>
+                        <p className="text-gray-500">The solution video for this problem hasn't been uploaded yet.</p>
+                      </div>
+                    )}
                   </div>
                 )}
                 {activeLeftTab === 'solutions' && (

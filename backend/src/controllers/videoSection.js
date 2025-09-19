@@ -85,17 +85,16 @@ const saveVideoMetadata = async (req, res) => {
       return res.status(409).json({ error: 'Video already exists' });
     }
 
-    // const thumbnailUrl = cloudinary.url(cloudinaryResource.public_id, {
-    // resource_type: 'image',  
-    // transformation: [
-    // { width: 400, height: 225, crop: 'fill' },
-    // { quality: 'auto' },
-    // { start_offset: 'auto' }  
-    // ],
-    // format: 'jpg'
-    // });
-
-    const thumbnailUrl = cloudinary.image(cloudinaryResource.public_id,{resource_type: "video"})
+    // Generate proper thumbnail URL for video
+    const thumbnailUrl = cloudinary.url(cloudinaryResource.public_id, {
+      resource_type: 'video',
+      transformation: [
+        { width: 400, height: 225, crop: 'fill' },
+        { quality: 'auto' },
+        { start_offset: 'auto' }
+      ],
+      format: 'jpg'
+    });
 
 // https://cloudinary.com/documentation/video_effects_and_enhancements#video_thumbnails
     // Create video solution record
@@ -149,4 +148,140 @@ const deleteVideo = async (req, res) => {
   }
 };
 
-module.exports = {generateUploadSignature,saveVideoMetadata,deleteVideo};
+// Get video by problem ID
+const getVideoByProblem = async (req, res) => {
+  try {
+    const { problemId } = req.params;
+
+    const video = await SolutionVideo.findOne({ problemId })
+      .populate('userId', 'username email')
+      .populate('problemId', 'title difficulty');
+
+    if (!video) {
+      return res.status(404).json({ error: 'Video not found for this problem' });
+    }
+
+    // Generate optimized video URL for streaming
+    const optimizedVideoUrl = cloudinary.url(video.cloudinaryPublicId, {
+      resource_type: 'video',
+      transformation: [
+        { quality: 'auto' },
+        { fetch_format: 'auto' }
+      ]
+    });
+
+    res.json({
+      id: video._id,
+      videoUrl: optimizedVideoUrl,
+      secureUrl: video.secureUrl,
+      thumbnailUrl: video.thumbnailUrl,
+      duration: video.duration,
+      createdAt: video.createdAt,
+      user: video.userId,
+      problem: video.problemId
+    });
+
+  } catch (error) {
+    console.error('Error fetching video:', error);
+    res.status(500).json({ error: 'Failed to fetch video' });
+  }
+};
+
+// Get all videos for a user
+const getUserVideos = async (req, res) => {
+  try {
+    const userId = req.result._id;
+    const { page = 1, limit = 10 } = req.query;
+
+    const videos = await SolutionVideo.find({ userId })
+      .populate('problemId', 'title difficulty')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const total = await SolutionVideo.countDocuments({ userId });
+
+    const videosWithUrls = videos.map(video => {
+      const optimizedVideoUrl = cloudinary.url(video.cloudinaryPublicId, {
+        resource_type: 'video',
+        transformation: [
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      });
+
+      return {
+        id: video._id,
+        videoUrl: optimizedVideoUrl,
+        secureUrl: video.secureUrl,
+        thumbnailUrl: video.thumbnailUrl,
+        duration: video.duration,
+        createdAt: video.createdAt,
+        problem: video.problemId
+      };
+    });
+
+    res.json({
+      videos: videosWithUrls,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total
+    });
+
+  } catch (error) {
+    console.error('Error fetching user videos:', error);
+    res.status(500).json({ error: 'Failed to fetch user videos' });
+  }
+};
+
+// Get all videos (admin only)
+const getAllVideos = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+
+    const videos = await SolutionVideo.find()
+      .populate('userId', 'username email')
+      .populate('problemId', 'title difficulty')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    const total = await SolutionVideo.countDocuments();
+
+    const videosWithUrls = videos.map(video => {
+      const optimizedVideoUrl = cloudinary.url(video.cloudinaryPublicId, {
+        resource_type: 'video',
+        transformation: [
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      });
+
+      return {
+        id: video._id,
+        videoUrl: optimizedVideoUrl,
+        secureUrl: video.secureUrl,
+        thumbnailUrl: video.thumbnailUrl,
+        duration: video.duration,
+        createdAt: video.createdAt,
+        user: video.userId,
+        problem: video.problemId
+      };
+    });
+
+    res.json({
+      videos: videosWithUrls,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total
+    });
+
+  } catch (error) {
+    console.error('Error fetching all videos:', error);
+    res.status(500).json({ error: 'Failed to fetch videos' });
+  }
+};
+
+module.exports = {generateUploadSignature,saveVideoMetadata,deleteVideo,getVideoByProblem,getUserVideos,getAllVideos};

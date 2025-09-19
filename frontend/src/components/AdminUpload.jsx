@@ -1,5 +1,5 @@
 import { useParams } from 'react-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
 import axiosClient from '../utils/axiosClient'
@@ -84,13 +84,9 @@ function AdminUpload(){
       };
     
       useEffect(() => {
-  axiosClient.get('/admin/problems')
-    .then(res => {
-      console.log(res.data); // 👈 check this in console
-      setProblems(res.data.problems); // ✅ must be an array
-    })
-    .catch(err => console.error(err));
-}, []);
+        // This useEffect is not needed for upload functionality
+        // Removing the problematic API call
+      }, []);
 
       // Format file size
       const formatFileSize = (bytes) => {
