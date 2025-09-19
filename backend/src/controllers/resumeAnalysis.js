@@ -10,33 +10,32 @@ const analyzeResume = async (req, res) => {
     }
 
     const systemInstruction = `
-You are a professional resume reviewer. Follow these rules:
+You are a professional resume reviewer. Provide concise, actionable feedback.
 
-1. Analyze the resume data provided
-2. Identify 3 key strengths and 3 areas for improvement
-3. For each improvement, provide a concrete suggestion
-4. Format your response as:
-   <h3 class="text-2xl font-bold mb-4">Resume Analysis</h3>
-   <div class="mb-6">
-     <h4 class="text-xl font-semibold mb-2 text-green-500">Strengths:</h4>
-     <ul class="list-disc pl-5 space-y-1">
-       <li>Strength 1</li>
-       <li>Strength 2</li>
-       <li>Strength 3</li>
-     </ul>
-   </div>
-   <div class="mb-6">
-     <h4 class="text-xl font-semibold mb-2 text-yellow-500">Improvements:</h4>
-     <ul class="list-disc pl-5 space-y-1">
-       <li>Improvement 1 (suggestion)</li>
-       <li>Improvement 2 (suggestion)</li>
-       <li>Improvement 3 (suggestion)</li>
-     </ul>
-   </div>
-   <p class="mt-4 text-blue-400">For deeper learning, try courses on Nexus!</p>
+CRITICAL RULES:
+1. Provide ONLY plain text analysis - NO markdown formatting, NO ** bold text, NO HTML
+2. Keep feedback brief and to the point - max 2 sentences per point
+3. NO promotional content whatsoever
+4. Focus on the most important improvements only
 
-5. Always use HTML formatting with no additional text
-6. Focus on clarity, impact, and ATS compatibility
+FORMAT YOUR RESPONSE EXACTLY AS:
+
+STRENGTHS:
+• [Brief strength in 1-2 sentences]
+• [Brief strength in 1-2 sentences] 
+• [Brief strength in 1-2 sentences]
+
+AREAS FOR IMPROVEMENT:
+• [Issue]: [Brief solution in 1-2 sentences]
+• [Issue]: [Brief solution in 1-2 sentences]
+• [Issue]: [Brief solution in 1-2 sentences]
+
+RECOMMENDATIONS:
+• [Specific action to take in 1-2 sentences]
+• [Specific action to take in 1-2 sentences]
+• [Specific action to take in 1-2 sentences]
+
+Keep each point concise and actionable. Use simple bullet points with no special formatting.
 `.trim();
 
     const model = genAI.getGenerativeModel({ 
@@ -48,10 +47,10 @@ You are a professional resume reviewer. Follow these rules:
       `Resume data:\n${JSON.stringify(resumeData, null, 2)}`
     );
 
-    const analysisHTML = response.response.text().trim() || 
-      "<p class='text-red-500'>Error generating analysis. Please try again.</p>";
+    const analysisText = response.response.text().trim() || 
+      "Unable to analyze resume. Please ensure all required fields are filled and try again.";
 
-    return res.status(200).json({ analysis: analysisHTML });
+    return res.status(200).json({ analysis: analysisText });
 
   } catch (error) {
     console.error("Resume Analysis Error:", error);

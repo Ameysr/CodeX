@@ -281,12 +281,28 @@ const Resume = () => {
             body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: white; color: black; }
             .resume { max-width: 800px; margin: 0 auto; }
             h1 { font-size: 28px; margin-bottom: 5px; }
-            h2 { font-size: 18px; margin: 20px 0 10px 0; padding-bottom: 3px; border-bottom: 1px solid #ccc; }
+            h2 { font-size: 18px; margin: 20px 0 10px 0; padding-bottom: 3px; }
             .contact-info { margin-bottom: 20px; }
             .contact-item { display: inline-block; margin-right: 20px; margin-bottom: 5px; }
             .section { margin-bottom: 25px; }
-            .section-header { background-color: #e6e6e6; padding: 12px 20px; margin-bottom: 15px; border-radius: 20px; }
-            .section-title { margin: 0; font-size: 14px; font-weight: bold; font-style: italic; color: #333; }
+            .section-header { 
+              background-color: #e6e6e6; 
+              padding: 12px 20px; 
+              margin-bottom: 15px; 
+              border-radius: 20px;
+              border: none !important;
+              box-shadow: none !important;
+            }
+            .section-title { 
+              margin: 0; 
+              font-size: 14px; 
+              font-weight: bold; 
+              font-style: italic; 
+              color: #333;
+              border: none !important;
+              text-decoration: none !important;
+              outline: none !important;
+            }
             .section-content { margin-left: 20px; }
             .experience-item, .education-item, .project-item { margin-bottom: 20px; }
             .item-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
@@ -301,7 +317,32 @@ const Resume = () => {
             ul { margin: 0; padding-left: 20px; color: #333; font-size: 14px; }
             li { margin-bottom: 5px; }
             .tech-stack { font-size: 14px; color: #666; margin: 5px 0; }
-            @media print { body { print-color-adjust: exact; } }
+            
+            /* Remove all borders and outlines that could cause black lines */
+            * { 
+              border: none !important; 
+              outline: none !important; 
+              text-decoration: none !important;
+              box-shadow: none !important;
+            }
+            
+            /* Only keep the main header border */
+            .main-header { 
+              border-bottom: 3px solid #333 !important; 
+            }
+            
+            @media print { 
+              body { print-color-adjust: exact; }
+              * { 
+                border: none !important; 
+                outline: none !important; 
+                text-decoration: none !important;
+                box-shadow: none !important;
+              }
+              .main-header { 
+                border-bottom: 3px solid #333 !important; 
+              }
+            }
           </style>
         </head>
         <body>
@@ -347,7 +388,7 @@ const generateResumeHTML = () => {
   return `
     <div class="resume">
       <!-- Header Section -->
-      <div style="text-align: left; margin-bottom: 30px; border-bottom: 3px solid #333; padding-bottom: 15px;">
+      <div class="main-header" style="text-align: left; margin-bottom: 30px; padding-bottom: 15px;">
         <h1 style="font-size: 36px; font-weight: bold; margin: 0 0 5px 0; color: #333; letter-spacing: 1px;">
           ${resume.personalInfo.name.toUpperCase() || 'YOUR NAME'}
         </h1>
@@ -1001,10 +1042,17 @@ return (
               </div>
             </div>
             
-            <div 
-              className="prose max-w-none text-gray-300" 
-              dangerouslySetInnerHTML={{ __html: analysis || '<div class="text-center p-8 text-gray-400">Click "AI Analysis" button to analyze your resume</div>' }} 
-            />
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-600">
+              {analysis ? (
+                <pre className="whitespace-pre-wrap text-gray-300 font-sans leading-relaxed">
+                  {analysis}
+                </pre>
+              ) : (
+                <div className="text-center p-8 text-gray-400">
+                  Click "AI Analysis" button to analyze your resume
+                </div>
+              )}
+            </div>
           </div>
         )}
 
