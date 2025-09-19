@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, NavLink } from 'react-router';
-import { unwrapResult } from '@reduxjs/toolkit';
-import { loginUser } from "../authSlice";
+import { loginUser, clearError } from "../authSlice";
 
 const loginSchema = z.object({
   emailId: z.string().email("Invalid Email"),
@@ -14,34 +13,68 @@ const loginSchema = z.object({
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const authError = useSelector((state) => state.auth.error);
+  const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
   
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setError: setFormError
   } = useForm({ resolver: zodResolver(loginSchema) });
 
+  // Clear errors on component mount
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  // Redirect if authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
   const onSubmit = async (data) => {
-    setIsSubmitting(true);
-    
     try {
       const result = await dispatch(loginUser(data));
-      unwrapResult(result);
-      navigate('/');
-    } catch (error) {
-      // Handle 401 specifically
-      if (error?.payload?.status === 401) {
-        // Keep the error in Redux state for display
-      } else {
-        // For other errors, preserve form data by not resetting
+      if (loginUser.fulfilled.match(result)) {
+        // Success - navigation will happen via useEffect
+      } else if (loginUser.rejected.match(result)) {
+        // Handle specific error types
+        const errorMessage = result.payload?.message || 'Login failed';
+        
+        if (result.payload?.status === 401) {
+          setFormError('password', {
+            type: 'manual',
+            message: 'Invalid email or password'
+          });
+        } else if (result.payload?.status === 404) {
+          setFormError('emailId', {
+            type: 'manual',
+            message: 'No account found with this email'
+          });
+        }
       }
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      console.error('Login error:', error);
     }
+  };
+
+  // Format error message for display
+  const getDisplayError = () => {
+    if (!error) return null;
+    
+    if (error.includes('Network Error') || error.includes('ERR_CONNECTION_REFUSED')) {
+      return 'Unable to connect to server. Please try again later.';
+    }
+    
+    if (error.includes('401') || error.includes('Invalid credentials')) {
+      return 'Invalid email or password';
+    }
+    
+    return error;
   };
 
 return (
@@ -53,14 +86,14 @@ return (
       <div className="card-body">
         <h2 className="card-title justify-center text-3xl mb-6 text-white">CodeX</h2>
 
-        {authError && (
+        {(error || getDisplayError()) && (
           <div
             className="alert alert-error mb-4"
-            style={{ backgroundColor: "#0A0A0A", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
+            style={{ backgroundColor: "#1f2937", border: "1px solid #ef4444" }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="stroke-current shrink-0 h-6 w-6"
+              className="stroke-current shrink-0 h-6 w-6 text-red-400"
               fill="none"
               viewBox="0 0 24 24"
             >
@@ -71,18 +104,13 @@ return (
                 d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <span className="text-white">
-              {authError.includes("401") ? "Invalid email or password" : authError}
+            <span className="text-red-200">
+              {getDisplayError() || error}
             </span>
           </div>
         )}
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault(); // Prevent default browser behavior
-            handleSubmit(onSubmit)(e);
-          }}
-        >
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="form-control">
             <label className="label">
               <span className="label-text text-white">Email</span>
@@ -90,11 +118,13 @@ return (
             <input
               type="email"
               placeholder="john@example.com"
-              className={`input input-bordered w-full ${errors.emailId ? "input-error" : ""}`}
+              className={`input input-bordered w-full bg-gray-800 text-white border-gray-600 focus:border-blue-500 ${
+                errors.emailId ? "border-red-500" : ""
+              }`}
               {...register("emailId")}
             />
             {errors.emailId && (
-              <span className="text-error text-sm mt-1">{errors.emailId.message}</span>
+              <span className="text-red-400 text-sm mt-1">{errors.emailId.message}</span>
             )}
           </div>
 
@@ -106,27 +136,42 @@ return (
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
-                className={`input input-bordered w-full pr-10 ${errors.password ? "input-error" : ""}`}
+                className={`input input-bordered w-full pr-10 bg-gray-800 text-white border-gray-600 focus:border-blue-500 ${
+                  errors.password ? "border-red-500" : ""
+                }`}
                 {...register("password")}
               />
               <button
                 type="button"
-                className="absolute top-1/2 right-3 transform -translate-y-1/2 btn btn-ghost btn-sm"
+                className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-white"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? "Hide" : "Show"}
+                {showPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
               </button>
             </div>
             {errors.password && (
-              <span className="text-error text-sm mt-1">{errors.password.message}</span>
+              <span className="text-red-400 text-sm mt-1">{errors.password.message}</span>
             )}
           </div>
 
           <div className="form-control mt-8">
-            <button type="submit" className="btn btn-primary w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <button 
+              type="submit" 
+              className="btn btn-primary w-full" 
+              disabled={loading}
+            >
+              {loading ? (
                 <>
-                  <span className="loading loading-spinner"></span>
+                  <span className="loading loading-spinner loading-sm"></span>
                   Logging in...
                 </>
               ) : (

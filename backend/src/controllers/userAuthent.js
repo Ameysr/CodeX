@@ -39,7 +39,30 @@ const register = async (req, res) => {
       message: "Registered Successfully" // Changed message for clarity
     });
   } catch (err) {
-    res.status(400).send("Error: " + err);
+    console.error('Registration error:', err);
+    
+    // Handle specific MongoDB duplicate key error
+    if (err.code === 11000 && err.keyPattern && err.keyPattern.emailId) {
+      return res.status(400).json({
+        message: "An account with this email already exists",
+        field: "emailId"
+      });
+    }
+    
+    // Handle Mongoose validation errors
+    if (err.name === 'ValidationError') {
+      const validationErrors = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({
+        message: validationErrors.join(', '),
+        type: "validation"
+      });
+    }
+    
+    // Generic error response
+    res.status(400).json({
+      message: err.message || "Registration failed. Please try again.",
+      type: "general"
+    });
   }
 };
 

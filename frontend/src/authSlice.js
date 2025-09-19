@@ -2,6 +2,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosClient from './utils/axiosClient';
 
+// Helper function to create serializable error objects
+const getSerializableError = (error) => {
+  return {
+    message: error.response?.data?.message || error.response?.data?.error || error.message,
+    status: error.response?.status,
+    code: error.code
+  };
+};
+
 
 
 export const registerUser = createAsyncThunk(
@@ -11,15 +20,11 @@ export const registerUser = createAsyncThunk(
       const response = await axiosClient.post('/user/register', userData);
       return response.data.user;
     } catch (error) {
-      return rejectWithValue({
-        message: error.response?.data?.message || error.message,
-        status: error.response?.status
-      });
+      return rejectWithValue(getSerializableError(error));
     }
   }
 );
 
-// Fixed loginUser implementation
 export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials, { rejectWithValue }) => {
@@ -27,10 +32,7 @@ export const loginUser = createAsyncThunk(
       const response = await axiosClient.post('/user/login', credentials);
       return response.data.user;
     } catch (error) {
-      return rejectWithValue({
-        message: error.response?.data?.message || error.message,
-        status: error.response?.status
-      });
+      return rejectWithValue(getSerializableError(error));
     }
   }
 );
@@ -84,12 +86,14 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload;
+        // Don't auto-authenticate on registration - user should verify email first
+        state.isAuthenticated = false;
+        state.user = null;
+        state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload.message;
+        state.error = action.payload?.message || 'Registration failed';
         state.isAuthenticated = false;
         state.user = null;
       })
@@ -103,10 +107,11 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
+        state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload.message;
+        state.error = action.payload?.message || 'Login failed';
         state.isAuthenticated = false;
         state.user = null;
       })

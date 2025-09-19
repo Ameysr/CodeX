@@ -5,6 +5,7 @@ import Homepage from "./pages/Homepage";
 import { useDispatch, useSelector } from 'react-redux';
 import { checkAuth } from "./authSlice";
 import { useEffect } from "react";
+import { Toaster } from 'react-hot-toast';
 import AdminPanel from "./components/AdminPanel";
 import ProblemPage from "./pages/ProblemPage"
 import ContestEditorPage from "./pages/ContestEditorPage";
@@ -45,6 +46,29 @@ function App(){
 
   return(
   <>
+    <Toaster 
+      position="top-right"
+      toastOptions={{
+        duration: 4000,
+        style: {
+          background: '#1f2937',
+          color: '#fff',
+          border: '1px solid #374151'
+        },
+        success: {
+          iconTheme: {
+            primary: '#10b981',
+            secondary: '#fff',
+          },
+        },
+        error: {
+          iconTheme: {
+            primary: '#ef4444',
+            secondary: '#fff',
+          },
+        },
+      }}
+    />
     <Routes>
       <Route path="/" element={isAuthenticated ?<MainPage></MainPage>:<Navigate to="/signup" />}></Route>
       <Route path="/home" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
