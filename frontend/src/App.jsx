@@ -1,4 +1,4 @@
-import {Routes, Route ,Navigate} from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Homepage from "./pages/Homepage";
@@ -28,74 +28,74 @@ import AdminDeleteContest from "./components/ContestDelete";
 import AdminPromoManager from "./components/PromoDelete";
 
 
-function App(){
-  
+function App() {
+
   const dispatch = useDispatch();
-  const {isAuthenticated,user,loading} = useSelector((state)=>state.auth);
+  const { isAuthenticated, user, loading } = useSelector((state) => state.auth);
 
   // check initial authentication
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
-  
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">
       <span className="loading loading-spinner loading-lg"></span>
     </div>;
   }
 
-  return(
-  <>
-    <Toaster 
-      position="top-right"
-      toastOptions={{
-        duration: 4000,
-        style: {
-          background: '#1f2937',
-          color: '#fff',
-          border: '1px solid #374151'
-        },
-        success: {
-          iconTheme: {
-            primary: '#10b981',
-            secondary: '#fff',
+  return (
+    <>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1f2937',
+            color: '#fff',
+            border: '1px solid #374151'
           },
-        },
-        error: {
-          iconTheme: {
-            primary: '#ef4444',
-            secondary: '#fff',
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: '#fff',
+            },
           },
-        },
-      }}
-    />
-    <Routes>
-      <Route path="/" element={isAuthenticated ?<MainPage></MainPage>:<Navigate to="/signup" />}></Route>
-      <Route path="/home" element={isAuthenticated ?<Homepage></Homepage>:<Navigate to="/signup" />}></Route>
-      <Route path="/login" element={isAuthenticated?<Navigate to="/" />:<Login></Login>}></Route>
-      <Route path="/signup" element={isAuthenticated?<Navigate to="/" />:<Signup></Signup>}></Route>
-      <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
-      <Route path="/admin/create" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
-      <Route path="/admin/delete" element={isAuthenticated && user?.role === 'admin' ? <AdminDelete /> : <Navigate to="/" />} />
-      <Route path="/problem/:problemId" element={<ProblemPage/>}></Route>
-      <Route path="/contest/:contestId/problem/:problemId" element={<ContestEditorPage />} />
-      <Route path="/admin/contest" element={isAuthenticated && user?.role === 'admin' ? <Contest /> : <Navigate to="/" />}/>
-      <Route path="/contest/:id/results" element={<ContestResultsPage />} />
-      <Route path="/dashboard" element={ <DashboardPage/>} />
-      <Route path="/interview" element={ <Interview/>} />
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
+      <Routes>
+        <Route path="/" element={isAuthenticated ? <MainPage></MainPage> : <Navigate to="/login" />}></Route>
+        <Route path="/home" element={isAuthenticated ? <Homepage></Homepage> : <Navigate to="/login" />}></Route>
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/" /> : <Login></Login>}></Route>
+        <Route path="/signup" element={isAuthenticated ? <Navigate to="/" /> : <Signup></Signup>}></Route>
+        <Route path="/admin" element={isAuthenticated && user?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
+        <Route path="/admin/create" element={isAuthenticated && user?.role === 'admin' ? <AdminPanel /> : <Navigate to="/" />} />
+        <Route path="/admin/delete" element={isAuthenticated && user?.role === 'admin' ? <AdminDelete /> : <Navigate to="/" />} />
+        <Route path="/problem/:problemId" element={<ProblemPage />}></Route>
+        <Route path="/contest/:contestId/problem/:problemId" element={<ContestEditorPage />} />
+        <Route path="/admin/contest" element={isAuthenticated && user?.role === 'admin' ? <Contest /> : <Navigate to="/" />} />
+        <Route path="/contest/:id/results" element={<ContestResultsPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/interview" element={<Interview />} />
 
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/verify-otp" element={<VerifyOTPPage />} />
-      <Route path="/promote" element={<PromotePage />} />
-      <Route path="/resume" element={<Resume />} />
-      <Route path="/admin/video" element={isAuthenticated && user?.role === 'admin' ? <AdminVideo /> : <Navigate to="/" />} />
-      <Route path="/admin/upload/:problemId" element={isAuthenticated && user?.role === 'admin' ? <AdminUpload /> : <Navigate to="/" />} />
-      <Route path="/video-test" element={isAuthenticated ? <VideoTester /> : <Navigate to="/login" />} />
-      <Route path="/admin/delete-contest" element={isAuthenticated && user?.role === 'admin' ? <AdminDeleteContest /> : <Navigate to="/" />} />
-      <Route path="/admin/delete-promo" element={isAuthenticated && user?.role === 'admin' ? <AdminPromoManager /> : <Navigate to="/" />} />
-    </Routes>
-  </>
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-otp" element={<VerifyOTPPage />} />
+        <Route path="/promote" element={<PromotePage />} />
+        <Route path="/resume" element={<Resume />} />
+        <Route path="/admin/video" element={isAuthenticated && user?.role === 'admin' ? <AdminVideo /> : <Navigate to="/" />} />
+        <Route path="/admin/upload/:problemId" element={isAuthenticated && user?.role === 'admin' ? <AdminUpload /> : <Navigate to="/" />} />
+        <Route path="/video-test" element={isAuthenticated ? <VideoTester /> : <Navigate to="/login" />} />
+        <Route path="/admin/delete-contest" element={isAuthenticated && user?.role === 'admin' ? <AdminDeleteContest /> : <Navigate to="/" />} />
+        <Route path="/admin/delete-promo" element={isAuthenticated && user?.role === 'admin' ? <AdminPromoManager /> : <Navigate to="/" />} />
+      </Routes>
+    </>
   )
 }
 
