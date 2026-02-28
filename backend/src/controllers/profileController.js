@@ -1,22 +1,15 @@
 const User = require('../models/user');
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require('../config/cloudinary');
 const stream = require('stream');
-
-// Configure Cloudinary (should be in a separate config file)
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 const uploadProfilePicture = async (req, res) => {
   try {
     // Get user ID from middleware
     const userId = req.result._id;
-    
+
     // Find user in database
     const user = await User.findById(userId);
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -42,9 +35,9 @@ const uploadProfilePicture = async (req, res) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: 'codeforge-profiles',
-          transformation: { 
-            width: 300, 
-            height: 300, 
+          transformation: {
+            width: 300,
+            height: 300,
             crop: 'thumb',
             gravity: 'face',
             quality: 'auto:best'
@@ -86,16 +79,16 @@ const uploadProfilePicture = async (req, res) => {
 
   } catch (error) {
     console.error('Profile picture upload error:', error);
-    
+
     // Handle different error types
     let status = 500;
     let message = 'Server error';
-    
+
     if (error.message === 'Image upload failed') {
       status = 400;
       message = 'Failed to upload image to cloud service';
     }
-    
+
     res.status(status).json({ error: message });
   }
 };

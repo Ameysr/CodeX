@@ -1,5 +1,5 @@
 const redisClient = require("../config/redis");
-const User =  require("../models/user")
+const User = require("../models/user")
 const validate = require('../utils/validator');
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
@@ -40,7 +40,7 @@ const register = async (req, res) => {
     });
   } catch (err) {
     console.error('Registration error:', err);
-    
+
     // Handle specific MongoDB duplicate key error
     if (err.code === 11000 && err.keyPattern && err.keyPattern.emailId) {
       return res.status(400).json({
@@ -48,7 +48,7 @@ const register = async (req, res) => {
         field: "emailId"
       });
     }
-    
+
     // Handle Mongoose validation errors
     if (err.name === 'ValidationError') {
       const validationErrors = Object.values(err.errors).map(e => e.message);
@@ -57,7 +57,7 @@ const register = async (req, res) => {
         type: "validation"
       });
     }
-    
+
     // Generic error response
     res.status(400).json({
       message: err.message || "Registration failed. Please try again.",
@@ -99,75 +99,75 @@ const login = async (req, res) => {
       message: "Login Successful"
     });
   } catch (err) {
-    res.status(401).send("Error: " + err);
+    res.status(401).json({ message: err.message || "Login failed" });
   }
 };
 
 
 // logOut feature
 
-const logout = async(req,res)=>{
+const logout = async (req, res) => {
 
-    try{
-        const {token} = req.cookies;
-        const payload = jwt.decode(token);
+  try {
+    const { token } = req.cookies;
+    const payload = jwt.decode(token);
 
 
-        await redisClient.set(`token:${token}`,'Blocked');
-        await redisClient.expireAt(`token:${token}`,payload.exp);
+    await redisClient.set(`token:${token}`, 'Blocked');
+    await redisClient.expireAt(`token:${token}`, payload.exp);
     //    Token add kar dung Redis ke blockList
     //    Cookies ko clear kar dena.....
 
-    res.cookie("token",null,{expires: new Date(Date.now())});
+    res.cookie("token", null, { expires: new Date(Date.now()) });
     res.send("Logged Out Succesfully");
 
-    }
-    catch(err){
-       res.status(503).send("Error: "+err);
-    }
+  }
+  catch (err) {
+    res.status(503).send("Error: " + err);
+  }
 }
 
 
-const adminRegister = async(req,res)=>{
-    try{
-        // validate the data;
+const adminRegister = async (req, res) => {
+  try {
+    // validate the data;
     //   if(req.result.role!='admin')
     //     throw new Error("Invalid Credentials");  
-      validate(req.body); 
-      const {firstName, emailId, password}  = req.body;
+    validate(req.body);
+    const { firstName, emailId, password } = req.body;
 
-      req.body.password = await bcrypt.hash(password, 10);
+    req.body.password = await bcrypt.hash(password, 10);
     //
-    
-     const user =  await User.create(req.body);
-     const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
-     res.cookie('token',token,{maxAge: 60*60*1000});
-     res.status(201).send("User Registered Successfully");
-    }
-    catch(err){
-        res.status(400).send("Error: "+err);
-    }
+
+    const user = await User.create(req.body);
+    const token = jwt.sign({ _id: user._id, emailId: emailId, role: user.role }, process.env.JWT_KEY, { expiresIn: 60 * 60 });
+    res.cookie('token', token, { maxAge: 60 * 60 * 1000 });
+    res.status(201).send("User Registered Successfully");
+  }
+  catch (err) {
+    res.status(400).send("Error: " + err);
+  }
 }
 
-const deleteProfile = async(req,res)=>{
-  
-    try{
-       const userId = req.result._id;
-      
+const deleteProfile = async (req, res) => {
+
+  try {
+    const userId = req.result._id;
+
     // userSchema delete
     await User.findByIdAndDelete(userId);
 
     // Submission se bhi delete karo...
-    
+
     // await Submission.deleteMany({userId});
-    
+
     res.status(200).send("Deleted Successfully");
 
-    }
-    catch(err){
-      
-        res.status(500).send("Internal Server Error");
-    }
+  }
+  catch (err) {
+
+    res.status(500).send("Internal Server Error");
+  }
 }
 
 
@@ -176,7 +176,7 @@ const forgotPassword = async (req, res) => {
   try {
     const { emailId } = req.body;
     const user = await User.findOne({ emailId });
-    
+
     if (!user) {
       return res.status(404).json("User not found");
     }
@@ -220,17 +220,17 @@ const forgotPassword = async (req, res) => {
 const verifyOTP = async (req, res) => {
   try {
     const { emailId, otp } = req.body;
-    
+
     // Get OTP from Redis
     const storedOTP = await redisClient.get(`otp:${emailId}`);
-    
+
     if (!storedOTP || storedOTP !== otp) {
       return res.status(400).json("Invalid or expired OTP");
     }
-    
+
     // Delete OTP after successful verification
     await redisClient.del(`otp:${emailId}`);
-    
+
     res.status(200).json("OTP verified successfully");
   } catch (err) {
     res.status(500).json("Error: " + err.message);
@@ -241,7 +241,7 @@ const resetPassword = async (req, res) => {
   try {
     const { emailId, newPassword } = req.body;
     const user = await User.findOne({ emailId });
-    
+
     if (!user) {
       return res.status(404).json("User not found");
     }
@@ -256,4 +256,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = {register, login,logout,adminRegister,deleteProfile,resetPassword,forgotPassword,verifyOTP};
+module.exports = { register, login, logout, adminRegister, deleteProfile, resetPassword, forgotPassword, verifyOTP };

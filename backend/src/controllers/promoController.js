@@ -1,15 +1,8 @@
 const CoursePromo = require('../models/coursePromo');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const cloudinary = require('cloudinary').v2;
+const cloudinary = require('../config/cloudinary');
 const stream = require('stream');
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 // Configure Razorpay
 const razorpay = new Razorpay({
@@ -72,7 +65,7 @@ const getNextAvailableSlot = (occupiedSlots) => {
 // Enhanced helper to check slot availability with detailed wait times
 const getSlotAvailabilityDetails = async () => {
   const now = new Date();
-  
+
   // Get only approved and active promos
   const activePromos = await CoursePromo.find({
     isApproved: true,
@@ -82,7 +75,7 @@ const getSlotAvailabilityDetails = async () => {
 
   // Get occupied slots
   const occupiedSlots = activePromos.map(promo => promo.slot);
-  
+
   // Get next available slot in priority order (1 > 2 > 3)
   const nextAvailableSlot = getNextAvailableSlot(occupiedSlots);
 
@@ -141,7 +134,7 @@ const formatWaitTime = (days) => {
 
 // Helper function to get slot duration text
 const getSlotDurationText = (slotNumber) => {
-  switch(slotNumber) {
+  switch (slotNumber) {
     case 1: return '1 Month Active';
     case 2: return '1 Week Active';
     case 3: return '1 Day Active';
@@ -153,13 +146,13 @@ const getSlotDurationText = (slotNumber) => {
 const getSlotAvailability = async (req, res) => {
   try {
     const slotDetails = await getSlotAvailabilityDetails();
-    
+
     // Create detailed slot status
     const slotStatus = [];
     for (let slotNum = 1; slotNum <= 3; slotNum++) {
       const isOccupied = slotDetails.occupiedSlots.includes(slotNum);
       const isNextAvailable = slotDetails.nextAvailableSlot === slotNum;
-      
+
       slotStatus.push({
         slot: slotNum,
         price: SLOT_PRICES[slotNum],
@@ -210,7 +203,7 @@ const createPromo = async (req, res) => {
 
     // Validate inputs
     if (!title || !description || !targetUrl) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'All fields are required',
         missingFields: {
           title: !title,
@@ -230,9 +223,9 @@ const createPromo = async (req, res) => {
 
     // Get detailed slot availability
     const slotDetails = await getSlotAvailabilityDetails();
-    
+
     if (slotDetails.availableSlots.length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'No promotion slots available',
         waitInfo: {
           message: `All 3 promotion slots are currently occupied. The next available slot will open in ${slotDetails.waitDays} day${slotDetails.waitDays !== 1 ? 's' : ''}.`,
@@ -379,7 +372,7 @@ const verifyPayment = async (req, res) => {
 const recordClick = async (req, res) => {
   try {
     const promo = await CoursePromo.findById(req.params.id);
-    
+
     if (!promo || !promo.isApproved || !promo.isActive) {
       return res.status(404).json({ error: 'Promotion not available' });
     }
@@ -389,7 +382,7 @@ const recordClick = async (req, res) => {
       { $inc: { clicks: 1 } }
     );
 
-    res.status(200).json({ 
+    res.status(200).json({
       targetUrl: promo.targetUrl,
       slot: promo.slot,
       duration: getSlotDurationText(promo.slot)
@@ -412,8 +405,8 @@ const getActivePromos = async (req, res) => {
       isActive: true,
       expiresAt: { $gt: now }
     })
-    .sort('slot') // Sort by slot priority (1, 2, 3)
-    .populate('userId', 'firstName lastName');
+      .sort('slot') // Sort by slot priority (1, 2, 3)
+      .populate('userId', 'firstName lastName');
 
     const slotDetails = await getSlotAvailabilityDetails();
 
@@ -440,10 +433,10 @@ const getActivePromos = async (req, res) => {
       }, {})
     });
   } catch (err) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Failed to get promotions',
-      details: err.message 
+      details: err.message
     });
   }
 };
@@ -477,8 +470,8 @@ const getMyPromoAnalytics = async (req, res) => {
     // Get current slot availability for reference
     const slotDetails = await getSlotAvailabilityDetails();
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       analytics,
       currentSlotAvailability: {
         available: slotDetails.availableSlots.length,
@@ -504,7 +497,7 @@ const getMyPromoAnalytics = async (req, res) => {
 const getQueueStatus = async (req, res) => {
   try {
     const slotDetails = await getSlotAvailabilityDetails();
-    
+
     const queueInfo = {
       availableSlots: slotDetails.availableSlots.length,
       totalSlots: 3,
@@ -564,7 +557,7 @@ const getAllPromos = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get promotions',
-      details: err.message 
+      details: err.message
     });
   }
 };
@@ -573,11 +566,11 @@ const getAllPromos = async (req, res) => {
 const deletePromo = async (req, res) => {
   try {
     const promo = await CoursePromo.findByIdAndDelete(req.params.id);
-    
+
     if (!promo) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'Promotion not found' 
+        error: 'Promotion not found'
       });
     }
 
@@ -592,7 +585,7 @@ const deletePromo = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to delete promotion',
-      details: err.message 
+      details: err.message
     });
   }
 };

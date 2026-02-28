@@ -1,20 +1,15 @@
 const { GoogleGenAI } = require("@google/genai");
 
+const solveDoubt = async (req, res) => {
+    try {
+        const { messages, title, description, testCases, startCode } = req.body;
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_KEY });
 
-const solveDoubt = async(req , res)=>{
-
-
-    try{
-
-        const {messages,title,description,testCases,startCode} = req.body;
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_KEY});
-       
-        async function main() {
         const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: messages,
-        config: {
-        systemInstruction: `
+            model: "gemini-1.5-flash",
+            contents: messages,
+            config: {
+                systemInstruction: `
 You are an expert Data Structures and Algorithms (DSA) tutor specializing in helping users solve coding problems. Your role is strictly limited to DSA-related assistance only.
 
 ## CURRENT PROBLEM CONTEXT:
@@ -22,7 +17,6 @@ You are an expert Data Structures and Algorithms (DSA) tutor specializing in hel
 [PROBLEM_DESCRIPTION]: ${description}
 [EXAMPLES]: ${testCases}
 [startCode]: ${startCode}
-
 
 ## YOUR CAPABILITIES:
 1. **Hint Provider**: Give step-by-step hints without revealing the complete solution
@@ -81,23 +75,19 @@ You are an expert Data Structures and Algorithms (DSA) tutor specializing in hel
 - Promote best coding practices
 
 Remember: Your goal is to help users learn and understand DSA concepts through the lens of the current problem, not just to provide quick answers.
-`},
-    });
-     
-    res.status(201).json({
-        message:response.text
-    });
-    console.log(response.text);
-    }
+`,
+            },
+        });
 
-    main();
-      
-    }
-    catch(err){
+        res.status(201).json({
+            message: response.text,
+        });
+    } catch (err) {
+        console.error("SolveDoubt Error:", err.message);
         res.status(500).json({
-            message: "Internal server error"
+            message: "Internal server error",
         });
     }
-}
+};
 
 module.exports = solveDoubt;
