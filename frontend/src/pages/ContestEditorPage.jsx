@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import Split from "react-split";
 import SubmissionHistory from "../components/SubmissionHistory";
 import { BeatLoader } from "react-spinners";
-import { saveContestCode } from "../contestCodeSlice";
+import { saveContestCode } from "../store/slices/contestCodeSlice";
 import { useSelector, useDispatch } from 'react-redux';
 
 const langMap = {
@@ -49,13 +49,13 @@ const ContestEditorPage = () => {
       const now = new Date();
       const initialElapsed = Math.floor((now - start) / 1000);
       setElapsedTime(initialElapsed);
-      
+
       // Set up interval
       timerRef.current = setInterval(() => {
         setElapsedTime(prev => prev + 1);
       }, 1000);
     }
-    
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -71,17 +71,17 @@ const ContestEditorPage = () => {
         // Fetch contest data
         const contestResponse = await axiosClient.get(`/contest/fetchById/${contestId}`);
         const { contest, participantData } = contestResponse.data;
-        
+
         setContest(contest);
         setParticipantData(participantData || null);
         setProblems(contest.problems || []);
-        
+
         // Find current problem index
         if (contest && contest.problems) {
           const index = contest.problems.findIndex(p => p._id === problemId);
           setCurrentProblemIndex(index !== -1 ? index : 0);
         }
-        
+
         // Fetch problem data
         if (problemId) {
           const problemResponse = await axiosClient.get(`/problem/problemById/${problemId}`);
@@ -92,7 +92,7 @@ const ContestEditorPage = () => {
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        setLoading(false); 
+        setLoading(false);
         setIsNavigating(false);
       }
     };
@@ -109,16 +109,16 @@ const ContestEditorPage = () => {
   // 2. Separate effect for handling code based on language/problem changes
   useEffect(() => {
     if (!problem) return; // Don't run if problem hasn't loaded yet
-    
+
     const savedCode = contestCodeStore[contestId]?.[problemId]?.[selectedLanguage];
-    
+
     if (savedCode) {
       setCode(savedCode);
     } else {
       const initialCodeObj = problem.startCode?.find(
         sc => sc.language === langMap[selectedLanguage]
       );
-      
+
       if (initialCodeObj) {
         setCode(initialCodeObj.initialCode);
       } else {
@@ -163,7 +163,7 @@ const ContestEditorPage = () => {
       language: selectedLanguage,
       code: code
     }));
-    
+
     // Just update the language - the useEffect will handle the code update
     setSelectedLanguage(language);
   };
@@ -213,15 +213,15 @@ const ContestEditorPage = () => {
       setActiveRightTab("result");
     } catch (error) {
       console.error("Full error:", error);
-      
+
       // Improved error handling
-      const errorMessage = error.response?.data?.error || 
-                          error.response?.data?.message || 
-                          error.message || 
-                          "Submission failed";
-      
+      const errorMessage = error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Submission failed";
+
       console.error("Detailed error:", errorMessage);
-      
+
       setSubmitResult({
         accepted: false,
         error: errorMessage
@@ -321,630 +321,624 @@ const ContestEditorPage = () => {
     );
   }
 
-return (
-  <div className="h-screen flex flex-col overflow-hidden" style={{backgroundColor:"#181C1F"}}>
-    {/* TOP BAR */}
-    <div 
-      className="w-full flex justify-between items-center px-6 py-4 shadow-lg" 
-      style={{ 
-        backgroundColor: "#181C1F",
-        borderBottom:"0.1px solid oklch(1 0 0 / 0.3)"
-      }}
-    >
-      <div className="flex items-center gap-4">
-        <button 
-          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 border hover:border-gray-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: "#DC2626", color: "white", border:"0.1px solid oklch(1 0 0 / 0.3)" }}
-          onClick={() => setShowLeaveConfirmation(true)}
-          disabled={isLeaving}
-        >
-          {isLeaving ? (
-            <span className="loading loading-spinner loading-xs"></span>
-          ) : (
-            <>
-              Leave Contest
-            </>
-          )}
-        </button>
-        
-        {/* Navigation Controls */}
-        <div className="flex gap-2">
-          <button 
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 border hover:border-gray-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" 
-            style={{ backgroundColor: "#131516", color: "oklch(0.8 0 0)", border:"0.1px solid oklch(1 0 0 / 0.3)" }}
-            onClick={goToPrevProblem}
-            disabled={!contest || currentProblemIndex === 0 || isNavigating}
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <button 
+  return (
+    <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: "#181C1F" }}>
+      {/* TOP BAR */}
+      <div
+        className="w-full flex justify-between items-center px-6 py-4 shadow-lg"
+        style={{
+          backgroundColor: "#181C1F",
+          borderBottom: "0.1px solid oklch(1 0 0 / 0.3)"
+        }}
+      >
+        <div className="flex items-center gap-4">
+          <button
             className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 border hover:border-gray-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: "#131516", color: "oklch(0.8 0 0)", border:"0.1px solid oklch(1 0 0 / 0.3)" }}
-            onClick={goToNextProblem}
-            disabled={!contest || currentProblemIndex === contest.problems.length - 1 || isNavigating}
+            style={{ backgroundColor: "#DC2626", color: "white", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
+            onClick={() => setShowLeaveConfirmation(true)}
+            disabled={isLeaving}
           >
-            <ArrowRight size={16} />
+            {isLeaving ? (
+              <span className="loading loading-spinner loading-xs"></span>
+            ) : (
+              <>
+                Leave Contest
+              </>
+            )}
           </button>
-        </div>
-        
-        {/* Problem Counter */}
-        {contest && contest.problems.length > 0 && (
-          <div className="ml-2 text-sm text-gray-300 px-3 py-1 rounded-lg border" style={{ backgroundColor: "#181C1F", border:"0.1px solid oklch(1 0 0 / 0.3)" }}>
-            Problem {currentProblemIndex + 1} of {contest.problems.length}
+
+          {/* Navigation Controls */}
+          <div className="flex gap-2">
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 border hover:border-gray-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "#131516", color: "oklch(0.8 0 0)", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
+              onClick={goToPrevProblem}
+              disabled={!contest || currentProblemIndex === 0 || isNavigating}
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 border hover:border-gray-600 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: "#131516", color: "oklch(0.8 0 0)", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
+              onClick={goToNextProblem}
+              disabled={!contest || currentProblemIndex === contest.problems.length - 1 || isNavigating}
+            >
+              <ArrowRight size={16} />
+            </button>
           </div>
-        )}
-      </div>
-      
-      <div className="flex items-center gap-6">
-        {/* TIMER DISPLAY - Added this section */}
-        {participantData?.startTime && !participantData?.endTime && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg border" style={{ backgroundColor: "#181C1F", border:"0.1px solid oklch(1 0 0 / 0.3)" }}>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">⏱️</span>
-              <div className="flex flex-col items-center">
-                <span className="text-sm text-gray-400">Time Elapsed</span>
-                <span className="text-lg font-mono font-bold text-yellow-400">
-                  {formatTime(elapsedTime)}
-                </span>
+
+          {/* Problem Counter */}
+          {contest && contest.problems.length > 0 && (
+            <div className="ml-2 text-sm text-gray-300 px-3 py-1 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+              Problem {currentProblemIndex + 1} of {contest.problems.length}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-6">
+          {/* TIMER DISPLAY - Added this section */}
+          {participantData?.startTime && !participantData?.endTime && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⏱️</span>
+                <div className="flex flex-col items-center">
+                  <span className="text-sm text-gray-400">Time Elapsed</span>
+                  <span className="text-lg font-mono font-bold text-yellow-400">
+                    {formatTime(elapsedTime)}
+                  </span>
+                </div>
               </div>
             </div>
+          )}
+
+          <div className="flex flex-col items-end">
+            {contest && (
+              <div className="text-sm font-semibold text-blue-400">
+                {contest.title}
+              </div>
+            )}
+            {contest && (
+              <div className="text-xs text-gray-400">
+                Ends: {new Date(contest.endDate).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+            )}
           </div>
-        )}
-        
-        <div className="flex flex-col items-end">
-          {contest && (
-            <div className="text-sm font-semibold text-blue-400">
-              {contest.title}
-            </div>
-          )}
-          {contest && (
-            <div className="text-xs text-gray-400">
-              Ends: {new Date(contest.endDate).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}
-            </div>  
-          )}
         </div>
       </div>
-    </div>
 
-    {/* RESIZABLE SPLIT BELOW */}
-    <Split
-      className="flex flex-1 overflow-hidden"
-      sizes={[50, 50]}
-      minSize={200}
-      expandToMin={false}
-      gutterSize={4}
-      gutterAlign="center"
-      snapOffset={30}
-      dragInterval={2}
-      direction="horizontal"
-      gutter={(index, direction) => {
-        const gutter = document.createElement("div");
+      {/* RESIZABLE SPLIT BELOW */}
+      <Split
+        className="flex flex-1 overflow-hidden"
+        sizes={[50, 50]}
+        minSize={200}
+        expandToMin={false}
+        gutterSize={4}
+        gutterAlign="center"
+        snapOffset={30}
+        dragInterval={2}
+        direction="horizontal"
+        gutter={(index, direction) => {
+          const gutter = document.createElement("div");
 
-        gutter.className = `${
-          direction === "horizontal" ? "cursor-col-resize" : "cursor-row-resize"
-        }`;
-        gutter.style.backgroundColor = "#374151";
-        gutter.style.transition = "all 0.2s ease";
-        gutter.style.cursor = direction === "horizontal" ? "col-resize" : "row-resize";
-
-        if (direction === "horizontal") {
-          gutter.style.width = "4px";
-          gutter.style.height = "40px";
-          gutter.style.margin = "auto";
-        } else {
-          gutter.style.height = "4px";
-          gutter.style.width = "40px";
-          gutter.style.margin = "auto";
-        }
-
-        gutter.onmouseover = () => {
-          gutter.style.backgroundColor = "#1D4ED8";
-          if (direction === "horizontal") {
-            gutter.style.height = "100%";
-          } else {
-            gutter.style.width = "100%";
-          }
-        };
-
-        gutter.onmouseout = () => {
+          gutter.className = `${direction === "horizontal" ? "cursor-col-resize" : "cursor-row-resize"
+            }`;
           gutter.style.backgroundColor = "#374151";
+          gutter.style.transition = "all 0.2s ease";
+          gutter.style.cursor = direction === "horizontal" ? "col-resize" : "row-resize";
+
           if (direction === "horizontal") {
+            gutter.style.width = "4px";
             gutter.style.height = "40px";
+            gutter.style.margin = "auto";
           } else {
+            gutter.style.height = "4px";
             gutter.style.width = "40px";
+            gutter.style.margin = "auto";
           }
-        };
 
-        return gutter;
-      }}
-    >
-      {/* LEFT PANEL - PROBLEM DESCRIPTION */}
-      <div 
-        style={{ 
-          backgroundColor: "#181C1F",
-          border: "0.1px solid oklch(1 0 0 / 0.3)"
-        }} 
-        className="flex flex-col mr-1 overflow-hidden rounded-l-lg"
-      >
-        <div 
-          className="flex gap-2 p-4 overflow-x-auto whitespace-nowrap items-center shadow-sm" 
-          style={{
-            backgroundColor:"#181C1F", 
-            borderBottom: "0.1px solid oklch(1 0 0 / 0.3)",
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#374151 transparent'
-          }}
-        >
-          {["description", "submissions"].map((tab) => (
-            <button
-              key={tab}
-              className={`text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                activeLeftTab === tab 
-                  ? "bg-blue-600 text-white shadow-lg transform scale-105" 
-                  : "text-gray-300 hover:text-white hover:bg-gray-700"
-              }`}
-              onClick={() => setActiveLeftTab(tab)}
-            >
-              {tab.toUpperCase()}
-            </button>
-          ))}
-        </div>
-        
-        <div className="flex-1 overflow-y-auto p-6" style={{ color: "oklch(0.8 0 0)", scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
-          {problem && (
-            <>
-              {activeLeftTab === "description" && (
-                <div className="space-y-6">
-                  <div className="border-b pb-4" style={{ borderColor: "oklch(1 0 0 / 0.3)" }}>
-                    <h1 className="text-3xl font-bold text-blue-400 mb-4">{problem.title}</h1>
-                    
-                    <div className="prose max-w-none mb-6">
-                      <div className="text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: problem.description }} />
-                    </div>
-                    
-                    {/* DIFFICULTY AND TAGS - Moved below description */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getDifficultyColor(problem.difficulty)}`}>
-                        {problem.difficulty.toUpperCase()}
-                      </span>
-                      {problem.tags && problem.tags.split(',').map((tag, index) => (
-                        <span key={index} className="px-3 py-1 text-gray-300 text-sm rounded-full border" style={{ backgroundColor: "#181C1F", border:"0.1px solid oklch(1 0 0 / 0.3)" }}>
-                          {tag.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* TEST CASES - Moved below description and tags */}
-                  <div className="mt-8">
-                    <h3 className="font-semibold mb-6 text-lg text-yellow-400 flex items-center gap-2">
-                      <span>🧪</span>
-                      Example Test Cases
-                    </h3>
-                    
-                    {problem.visibleTestCases?.map((testCase, index) => (
-                      <div 
-                        key={index} 
-                        className="mb-6 p-6 rounded-xl border shadow-lg"
-                        style={{ 
-                          backgroundColor: "#181C1F", 
-                          border: "0.1px solid oklch(1 0 0 / 0.3)" 
-                        }}
-                      >
-                        <div className="mb-4">
-                          <span className="text-sm font-medium text-blue-400 mb-2 block">Input:</span>
-                          <pre className="p-4 text-sm mt-1 overflow-x-auto rounded-lg border" 
-                               style={{ 
-                                 backgroundColor: "#181C1F", 
-                                 border: "0.1px solid oklch(1 0 0 / 0.3)",
-                                 scrollbarWidth: 'thin',
-                                 scrollbarColor: '#374151 transparent'
-                               }}>
-                            <code className="text-gray-300">{testCase.input}</code>
-                          </pre>
-                        </div>
-                        
-                        <div className="mb-4">
-                          <span className="text-sm font-medium text-green-400 mb-2 block">Expected Output:</span>
-                          <pre className="p-4 text-sm mt-1 overflow-x-auto rounded-lg border" 
-                               style={{ 
-                                 backgroundColor: "#181C1F", 
-                                 border: "0.1px solid oklch(1 0 0 / 0.3)",
-                                 scrollbarWidth: 'thin',
-                                 scrollbarColor: '#374151 transparent'
-                               }}>
-                            <code className="text-gray-300">{testCase.output}</code>
-                          </pre>
-                        </div>
-                        
-                        {testCase.explanation && (
-                          <div>
-                            <span className="text-sm font-medium text-purple-400 mb-2 block">Explanation:</span>
-                            <pre className="p-4 text-sm mt-1 overflow-x-auto rounded-lg border" 
-                                 style={{ 
-                                   backgroundColor: "#181C1F", 
-                                   border: "0.1px solid oklch(1 0 0 / 0.3)",
-                                   scrollbarWidth: 'thin',
-                                   scrollbarColor: '#374151 transparent'
-                                 }}>
-                              <code className="text-gray-300">{testCase.explanation}</code>
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {activeLeftTab === "submissions" && (
-                <div className="space-y-6">
-                  <div className="border-b pb-4" style={{ borderColor: "oklch(1 0 0 / 0.3)" }}>
-                    <h2 className="text-2xl font-bold text-orange-400 mb-2">My Submissions</h2>
-                    <p className="text-gray-400">Your submission history for this contest problem</p>
-                  </div>
-                  <div className="text-gray-300">
-                    <SubmissionHistory problemId={problemId} contestId={contestId} />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+          gutter.onmouseover = () => {
+            gutter.style.backgroundColor = "#1D4ED8";
+            if (direction === "horizontal") {
+              gutter.style.height = "100%";
+            } else {
+              gutter.style.width = "100%";
+            }
+          };
 
-      {/* RIGHT PANEL - EDITOR AND RESULTS */}
-      <div 
-        style={{ 
-          backgroundColor: "#181C1F",
-          border: "0.1px solid oklch(1 0 0 / 0.3)"
-        }} 
-        className="flex flex-col ml-1 overflow-hidden rounded-r-lg"
+          gutter.onmouseout = () => {
+            gutter.style.backgroundColor = "#374151";
+            if (direction === "horizontal") {
+              gutter.style.height = "40px";
+            } else {
+              gutter.style.width = "40px";
+            }
+          };
+
+          return gutter;
+        }}
       >
-        <div 
-          className="flex gap-2 p-4 overflow-x-auto whitespace-nowrap items-center shadow-sm" 
+        {/* LEFT PANEL - PROBLEM DESCRIPTION */}
+        <div
           style={{
-            backgroundColor:"#181C1F",
-            borderBottom: "0.1px solid oklch(1 0 0 / 0.3)",
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#374151 transparent'
+            backgroundColor: "#181C1F",
+            border: "0.1px solid oklch(1 0 0 / 0.3)"
           }}
+          className="flex flex-col mr-1 overflow-hidden rounded-l-lg"
         >
-          {/* Language Selection Tabs */}
-          <div className="flex gap-1 mr-8">
-            {["cpp", "java", "javascript"].map((lang) => (
+          <div
+            className="flex gap-2 p-4 overflow-x-auto whitespace-nowrap items-center shadow-sm"
+            style={{
+              backgroundColor: "#181C1F",
+              borderBottom: "0.1px solid oklch(1 0 0 / 0.3)",
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#374151 transparent'
+            }}
+          >
+            {["description", "submissions"].map((tab) => (
               <button
-                key={lang}
-                onClick={() => handleLanguageChange(lang)}
-                className={`px-4 py-2 font-medium text-sm rounded-lg transition-all duration-200 ${
-                  selectedLanguage === lang
-                    ? "text-blue-400 bg-blue-500/20 border-b-2 border-blue-400"
-                    : "text-gray-500 hover:text-white hover:bg-gray-700"
-                }`}
+                key={tab}
+                className={`text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeLeftTab === tab
+                    ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                  }`}
+                onClick={() => setActiveLeftTab(tab)}
               >
-                {lang === "cpp" 
-                  ? "C++" 
-                  : lang === "javascript" 
-                    ? "JavaScript" 
-                    : "Java"}
+                {tab.toUpperCase()}
               </button>
             ))}
           </div>
-          
-          {/* Tabs */}
-          {["code", "result"].map((tab) => (
-            <button
-              key={tab}
-              className={`text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                activeRightTab === tab 
-                  ? "bg-blue-600 text-white shadow-lg transform scale-105" 
-                  : "text-gray-300 hover:text-white hover:bg-gray-700"
-              }`}
-              onClick={() => setActiveRightTab(tab)}
-            >
-              {tab.toUpperCase()}
-            </button>
-          ))}
+
+          <div className="flex-1 overflow-y-auto p-6" style={{ color: "oklch(0.8 0 0)", scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
+            {problem && (
+              <>
+                {activeLeftTab === "description" && (
+                  <div className="space-y-6">
+                    <div className="border-b pb-4" style={{ borderColor: "oklch(1 0 0 / 0.3)" }}>
+                      <h1 className="text-3xl font-bold text-blue-400 mb-4">{problem.title}</h1>
+
+                      <div className="prose max-w-none mb-6">
+                        <div className="text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: problem.description }} />
+                      </div>
+
+                      {/* DIFFICULTY AND TAGS - Moved below description */}
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getDifficultyColor(problem.difficulty)}`}>
+                          {problem.difficulty.toUpperCase()}
+                        </span>
+                        {problem.tags && problem.tags.split(',').map((tag, index) => (
+                          <span key={index} className="px-3 py-1 text-gray-300 text-sm rounded-full border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+                            {tag.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* TEST CASES - Moved below description and tags */}
+                    <div className="mt-8">
+                      <h3 className="font-semibold mb-6 text-lg text-yellow-400 flex items-center gap-2">
+                        <span>🧪</span>
+                        Example Test Cases
+                      </h3>
+
+                      {problem.visibleTestCases?.map((testCase, index) => (
+                        <div
+                          key={index}
+                          className="mb-6 p-6 rounded-xl border shadow-lg"
+                          style={{
+                            backgroundColor: "#181C1F",
+                            border: "0.1px solid oklch(1 0 0 / 0.3)"
+                          }}
+                        >
+                          <div className="mb-4">
+                            <span className="text-sm font-medium text-blue-400 mb-2 block">Input:</span>
+                            <pre className="p-4 text-sm mt-1 overflow-x-auto rounded-lg border"
+                              style={{
+                                backgroundColor: "#181C1F",
+                                border: "0.1px solid oklch(1 0 0 / 0.3)",
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: '#374151 transparent'
+                              }}>
+                              <code className="text-gray-300">{testCase.input}</code>
+                            </pre>
+                          </div>
+
+                          <div className="mb-4">
+                            <span className="text-sm font-medium text-green-400 mb-2 block">Expected Output:</span>
+                            <pre className="p-4 text-sm mt-1 overflow-x-auto rounded-lg border"
+                              style={{
+                                backgroundColor: "#181C1F",
+                                border: "0.1px solid oklch(1 0 0 / 0.3)",
+                                scrollbarWidth: 'thin',
+                                scrollbarColor: '#374151 transparent'
+                              }}>
+                              <code className="text-gray-300">{testCase.output}</code>
+                            </pre>
+                          </div>
+
+                          {testCase.explanation && (
+                            <div>
+                              <span className="text-sm font-medium text-purple-400 mb-2 block">Explanation:</span>
+                              <pre className="p-4 text-sm mt-1 overflow-x-auto rounded-lg border"
+                                style={{
+                                  backgroundColor: "#181C1F",
+                                  border: "0.1px solid oklch(1 0 0 / 0.3)",
+                                  scrollbarWidth: 'thin',
+                                  scrollbarColor: '#374151 transparent'
+                                }}>
+                                <code className="text-gray-300">{testCase.explanation}</code>
+                              </pre>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeLeftTab === "submissions" && (
+                  <div className="space-y-6">
+                    <div className="border-b pb-4" style={{ borderColor: "oklch(1 0 0 / 0.3)" }}>
+                      <h2 className="text-2xl font-bold text-orange-400 mb-2">My Submissions</h2>
+                      <p className="text-gray-400">Your submission history for this contest problem</p>
+                    </div>
+                    <div className="text-gray-300">
+                      <SubmissionHistory problemId={problemId} contestId={contestId} />
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {activeRightTab === "code" && (
-            <div className="flex flex-col h-full overflow-hidden">
-              {/* Combined scroll container */}
-              <div 
-                className="flex-1 overflow-y-auto" 
-                style={{ 
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: '#374151 transparent',
-                }}
+        {/* RIGHT PANEL - EDITOR AND RESULTS */}
+        <div
+          style={{
+            backgroundColor: "#181C1F",
+            border: "0.1px solid oklch(1 0 0 / 0.3)"
+          }}
+          className="flex flex-col ml-1 overflow-hidden rounded-r-lg"
+        >
+          <div
+            className="flex gap-2 p-4 overflow-x-auto whitespace-nowrap items-center shadow-sm"
+            style={{
+              backgroundColor: "#181C1F",
+              borderBottom: "0.1px solid oklch(1 0 0 / 0.3)",
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#374151 transparent'
+            }}
+          >
+            {/* Language Selection Tabs */}
+            <div className="flex gap-1 mr-8">
+              {["cpp", "java", "javascript"].map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => handleLanguageChange(lang)}
+                  className={`px-4 py-2 font-medium text-sm rounded-lg transition-all duration-200 ${selectedLanguage === lang
+                      ? "text-blue-400 bg-blue-500/20 border-b-2 border-blue-400"
+                      : "text-gray-500 hover:text-white hover:bg-gray-700"
+                    }`}
+                >
+                  {lang === "cpp"
+                    ? "C++"
+                    : lang === "javascript"
+                      ? "JavaScript"
+                      : "Java"}
+                </button>
+              ))}
+            </div>
+
+            {/* Tabs */}
+            {["code", "result"].map((tab) => (
+              <button
+                key={tab}
+                className={`text-sm px-4 py-2 rounded-lg font-medium transition-all duration-200 ${activeRightTab === tab
+                    ? "bg-blue-600 text-white shadow-lg transform scale-105"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700"
+                  }`}
+                onClick={() => setActiveRightTab(tab)}
               >
-                {/* Editor */}
+                {tab.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {activeRightTab === "code" && (
+              <div className="flex flex-col h-full overflow-hidden">
+                {/* Combined scroll container */}
                 <div
-                  className="mx-4 mt-4 overflow-hidden border rounded-lg shadow-lg"
-                  style={{ 
-                    backgroundColor: "#181C1F", 
-                    border: "0.1px solid oklch(1 0 0 / 0.3)" 
+                  className="flex-1 overflow-y-auto"
+                  style={{
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#374151 transparent',
                   }}
                 >
-                  <Editor
-                    height="50vh"
-                    width="100%"
-                    language={getLanguageForMonaco(selectedLanguage)}
-                    value={code}
-                    onChange={handleEditorChange}
-                    onMount={handleEditorDidMount}
-                    theme="vs-dark"
-                    options={{
-                      fontSize: 16,
-                      minimap: { enabled: false },
-                      wordWrap: "on",
-                      scrollBeyondLastLine: false,
-                      tabSize: 4,
-                      automaticLayout: true,
-                      cursorBlinking: "smooth",
-                      renderLineHighlight: "line",
-                      cursorStyle: "line",
-                      lineNumbersMinChars: 3,
-                      lineDecorationsWidth: 8,
-                      scrollbar: {
-                        verticalScrollbarSize: 6,
-                        horizontalScrollbarSize: 6,
-                        useShadows: false,
-                        verticalSliderSize: 6,
-                        horizontalSliderSize: 6,
-                      },
+                  {/* Editor */}
+                  <div
+                    className="mx-4 mt-4 overflow-hidden border rounded-lg shadow-lg"
+                    style={{
+                      backgroundColor: "#181C1F",
+                      border: "0.1px solid oklch(1 0 0 / 0.3)"
                     }}
-                  />
+                  >
+                    <Editor
+                      height="50vh"
+                      width="100%"
+                      language={getLanguageForMonaco(selectedLanguage)}
+                      value={code}
+                      onChange={handleEditorChange}
+                      onMount={handleEditorDidMount}
+                      theme="vs-dark"
+                      options={{
+                        fontSize: 16,
+                        minimap: { enabled: false },
+                        wordWrap: "on",
+                        scrollBeyondLastLine: false,
+                        tabSize: 4,
+                        automaticLayout: true,
+                        cursorBlinking: "smooth",
+                        renderLineHighlight: "line",
+                        cursorStyle: "line",
+                        lineNumbersMinChars: 3,
+                        lineDecorationsWidth: 8,
+                        scrollbar: {
+                          verticalScrollbarSize: 6,
+                          horizontalScrollbarSize: 6,
+                          useShadows: false,
+                          verticalSliderSize: 6,
+                          horizontalSliderSize: 6,
+                        },
+                      }}
+                    />
+                  </div>
+
+                  {/* Run results display */}
+                  {runResult && (
+                    <div className={`p-6 rounded-xl border shadow-lg mx-4 my-4 ${runResult.success
+                        ? 'border-green-500/30'
+                        : 'border-red-500/30'
+                      }`}
+                      style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
+                    >
+                      <h4 className="font-bold mb-4 text-lg flex items-center gap-2">
+                        {runResult.success
+                          ? <><span className="text-green-400">✅</span> Test results</>
+                          : <><span className="text-red-400">❌</span> Test failed</>
+                        }
+                      </h4>
+
+                      {runResult.testCases?.map((tc, i) => (
+                        <div
+                          key={i}
+                          className="mb-4 p-4 rounded-lg border"
+                          style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
+                        >
+                          <div className="flex items-center mb-3">
+                            <span className={`mr-2 text-lg ${tc.status_id === 3 ? 'text-green-400' : 'text-red-400'}`}>
+                              {tc.status_id === 3 ? '✓' : '✗'}
+                            </span>
+                            <span className="font-medium">Test Case {i + 1}</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div className="p-3 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+                              <span className="text-blue-400 font-medium block mb-1">Input:</span>
+                              <div className="text-gray-300 font-mono text-xs break-all">{tc.stdin}</div>
+                            </div>
+                            <div className="p-3 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+                              <span className="text-green-400 font-medium block mb-1">Expected:</span>
+                              <div className="text-gray-300 font-mono text-xs">{tc.expected_output}</div>
+                            </div>
+                            <div className="p-3 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+                              <span className="text-purple-400 font-medium block mb-1">Output:</span>
+                              <div className="text-gray-300 font-mono text-xs">{tc.stdout || "No output"}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {runResult.success && (
+                        <div className="mt-4 p-4 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="text-yellow-400">
+                              <span className="font-medium">Runtime:</span>
+                              <span className="ml-2 font-mono">{runResult.runtime} sec</span>
+                            </div>
+                            <div className="text-cyan-400">
+                              <span className="font-medium">Memory:</span>
+                              <span className="ml-2 font-mono">{runResult.memory} KB</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {isRunning && (
+                    <div className="flex justify-center my-6">
+                      <BeatLoader color="#1D4ED8" size={12} />
+                    </div>
+                  )}
                 </div>
 
-                {/* Run results display */}
-                {runResult && (
-                  <div className={`p-6 rounded-xl border shadow-lg mx-4 my-4 ${
-                    runResult.success 
-                      ? 'border-green-500/30' 
-                      : 'border-red-500/30'
-                  }`}
-                  style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
+                {/* Fixed buttons at bottom */}
+                <div className="flex gap-3 p-4 border-t"
+                  style={{
+                    backgroundColor: "#181C1F",
+                    borderTop: "0.1px solid oklch(1 0 0 / 0.3)"
+                  }}>
+                  <button
+                    className="flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+                    style={{ backgroundColor: "#1D4ED8", color: "white", minWidth: "100px" }}
+                    onClick={handleRun}
+                    disabled={isRunning}
                   >
-                    <h4 className="font-bold mb-4 text-lg flex items-center gap-2">
-                      {runResult.success 
-                        ? <><span className="text-green-400">✅</span> Test results</>
-                        : <><span className="text-red-400">❌</span> Test failed</>
-                      }
-                    </h4>
-                    
-                    {runResult.testCases?.map((tc, i) => (
-                      <div 
-                        key={i} 
-                        className="mb-4 p-4 rounded-lg border"
-                        style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}
-                      >
-                        <div className="flex items-center mb-3">
-                          <span className={`mr-2 text-lg ${tc.status_id === 3 ? 'text-green-400' : 'text-red-400'}`}>
-                            {tc.status_id === 3 ? '✓' : '✗'}
-                          </span>
-                          <span className="font-medium">Test Case {i+1}</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div className="p-3 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
-                            <span className="text-blue-400 font-medium block mb-1">Input:</span> 
-                            <div className="text-gray-300 font-mono text-xs break-all">{tc.stdin}</div>
-                          </div>
-                          <div className="p-3 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
-                            <span className="text-green-400 font-medium block mb-1">Expected:</span> 
-                            <div className="text-gray-300 font-mono text-xs">{tc.expected_output}</div>
-                          </div>
-                          <div className="p-3 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
-                            <span className="text-purple-400 font-medium block mb-1">Output:</span> 
-                            <div className="text-gray-300 font-mono text-xs">{tc.stdout || "No output"}</div>
+                    {isRunning ? (
+                      <span className="loading loading-spinner loading-sm mr-2"></span>
+                    ) : (
+                      <span className="mr-2">▶️</span>
+                    )}
+                    Run
+                  </button>
+
+                  <button
+                    className="flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
+                    style={{ backgroundColor: "#059669", color: "white", minWidth: "100px" }}
+                    onClick={handleSubmitCode}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <span className="loading loading-spinner loading-sm mr-2"></span>
+                    ) : (
+                      <span className="mr-2">🚀</span>
+                    )}
+                    Submit
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeRightTab === 'result' && (
+              <div className="flex-1 p-6 overflow-y-auto text-white" style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#374151 transparent'
+              }}>
+                <h3 className="font-semibold text-2xl mb-6 border-b pb-3 text-orange-400 flex items-center gap-2" style={{ borderColor: "oklch(1 0 0 / 0.3)" }}>
+                  <span>📊</span>
+                  Submission Result
+                </h3>
+
+                {submitResult ? (
+                  <div className={`rounded-xl p-6 border shadow-lg ${submitResult.accepted
+                      ? 'bg-green-900/20 border-green-500/30'
+                      : 'bg-red-900/20 border-red-500/30'
+                    }`}
+                    style={{ border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+                    {submitResult.accepted ? (
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-4">
+                          <div className="text-4xl">🎉</div>
+                          <div>
+                            <h4 className="font-bold text-3xl text-green-400">Accepted</h4>
+                            <div className="flex flex-wrap gap-3 mt-3">
+                              <div className="px-4 py-2 rounded-lg border"
+                                style={{
+                                  backgroundColor: "#181C1F",
+                                  border: "0.1px solid oklch(1 0 0 / 0.3)"
+                                }}>
+                                <span className="text-gray-400">Test Cases: </span>
+                                <span className="font-mono text-green-400">{submitResult.passedTestCases}/{submitResult.totalTestCases}</span>
+                              </div>
+                              <div className="px-4 py-2 rounded-lg border"
+                                style={{
+                                  backgroundColor: "#181C1F",
+                                  border: "0.1px solid oklch(1 0 0 / 0.3)"
+                                }}>
+                                <span className="text-gray-400">Runtime: </span>
+                                <span className="font-mono text-yellow-400">{submitResult.runtime}s</span>
+                              </div>
+                              <div className="px-4 py-2 rounded-lg border"
+                                style={{
+                                  backgroundColor: "#181C1F",
+                                  border: "0.1px solid oklch(1 0 0 / 0.3)"
+                                }}>
+                                <span className="text-gray-400">Memory: </span>
+                                <span className="font-mono text-cyan-400">{submitResult.memory}KB</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    ))}
-                    
-                    {runResult.success && (
-                      <div className="mt-4 p-4 rounded-lg border" style={{ backgroundColor: "#181C1F", border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="text-yellow-400">
-                            <span className="font-medium">Runtime:</span> 
-                            <span className="ml-2 font-mono">{runResult.runtime} sec</span>
-                          </div>
-                          <div className="text-cyan-400">
-                            <span className="font-medium">Memory:</span> 
-                            <span className="ml-2 font-mono">{runResult.memory} KB</span>
-                          </div>
+                    ) : (
+                      <div>
+                        <h4 className="font-bold text-xl text-red-400 flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {submitResult.error || "Submission Failed"}
+                        </h4>
+                        <div className="mt-4 p-4 rounded-lg border"
+                          style={{
+                            backgroundColor: "#181C1F",
+                            border: "0.1px solid oklch(1 0 0 / 0.3)"
+                          }}>
+                          <p className="text-gray-300">
+                            Test Cases Passed:
+                            <span className="font-mono ml-2 text-red-400">
+                              {submitResult.passedTestCases || 0}/{submitResult.totalTestCases || 0}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     )}
                   </div>
-                )}
-                  
-                {isRunning && (
-                  <div className="flex justify-center my-6">
-                    <BeatLoader color="#1D4ED8" size={12} />
-                  </div>
-                )}
-              </div>
-              
-              {/* Fixed buttons at bottom */}
-              <div className="flex gap-3 p-4 border-t" 
-                   style={{ 
-                     backgroundColor: "#181C1F", 
-                     borderTop: "0.1px solid oklch(1 0 0 / 0.3)" 
-                   }}>
-                <button
-                  className="flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
-                  style={{ backgroundColor: "#1D4ED8", color: "white", minWidth: "100px" }}
-                  onClick={handleRun}
-                  disabled={isRunning}
-                >
-                  {isRunning ? (
-                    <span className="loading loading-spinner loading-sm mr-2"></span>
-                  ) : (
-                    <span className="mr-2">▶️</span>
-                  )}
-                  Run
-                </button>
-
-                <button
-                  className="flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg"
-                  style={{ backgroundColor: "#059669", color: "white", minWidth: "100px" }}
-                  onClick={handleSubmitCode}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <span className="loading loading-spinner loading-sm mr-2"></span>
-                  ) : (
-                    <span className="mr-2">🚀</span>
-                  )}
-                  Submit
-                </button>
-              </div>
-            </div>
-          )}
-          
-          {activeRightTab === 'result' && (
-          <div className="flex-1 p-6 overflow-y-auto text-white" style={{ 
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#374151 transparent'
-          }}>
-            <h3 className="font-semibold text-2xl mb-6 border-b pb-3 text-orange-400 flex items-center gap-2" style={{ borderColor: "oklch(1 0 0 / 0.3)" }}>
-              <span>📊</span>
-              Submission Result
-            </h3>
-            
-            {submitResult ? (
-              <div className={`rounded-xl p-6 border shadow-lg ${
-                submitResult.accepted 
-                  ? 'bg-green-900/20 border-green-500/30' 
-                  : 'bg-red-900/20 border-red-500/30'
-              }`}
-              style={{ border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
-                {submitResult.accepted ? (
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-4">
-                      <div className="text-4xl">🎉</div>
-                      <div>
-                        <h4 className="font-bold text-3xl text-green-400">Accepted</h4>
-                        <div className="flex flex-wrap gap-3 mt-3">
-                          <div className="px-4 py-2 rounded-lg border" 
-                               style={{ 
-                                 backgroundColor: "#181C1F", 
-                                 border: "0.1px solid oklch(1 0 0 / 0.3)" 
-                               }}>
-                            <span className="text-gray-400">Test Cases: </span>
-                            <span className="font-mono text-green-400">{submitResult.passedTestCases}/{submitResult.totalTestCases}</span>
-                          </div>
-                          <div className="px-4 py-2 rounded-lg border" 
-                               style={{ 
-                                 backgroundColor: "#181C1F", 
-                                 border: "0.1px solid oklch(1 0 0 / 0.3)" 
-                               }}>
-                            <span className="text-gray-400">Runtime: </span>
-                            <span className="font-mono text-yellow-400">{submitResult.runtime}s</span>
-                          </div>
-                          <div className="px-4 py-2 rounded-lg border" 
-                               style={{ 
-                                 backgroundColor: "#181C1F", 
-                                 border: "0.1px solid oklch(1 0 0 / 0.3)" 
-                               }}>
-                            <span className="text-gray-400">Memory: </span>
-                            <span className="font-mono text-cyan-400">{submitResult.memory}KB</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 ) : (
-                  <div>
-                    <h4 className="font-bold text-xl text-red-400 flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      {submitResult.error || "Submission Failed"}
-                    </h4>
-                    <div className="mt-4 p-4 rounded-lg border" 
-                         style={{ 
-                           backgroundColor: "#181C1F", 
-                           border: "0.1px solid oklch(1 0 0 / 0.3)" 
-                         }}>
-                      <p className="text-gray-300">
-                        Test Cases Passed: 
-                        <span className="font-mono ml-2 text-red-400">
-                          {submitResult.passedTestCases || 0}/{submitResult.totalTestCases || 0}
-                        </span>
-                      </p>
-                    </div>
+                  <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-xl"
+                    style={{ border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    Click "Submit" to evaluate your solution
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-400 border-2 border-dashed rounded-xl"
-                   style={{ border: "0.1px solid oklch(1 0 0 / 0.3)" }}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                Click "Submit" to evaluate your solution
               </div>
             )}
           </div>
-        )}
         </div>
-      </div>
-    </Split>
+      </Split>
 
-    {/* Leave Contest Confirmation Modal */}
-    {showLeaveConfirmation && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="p-6 rounded-xl max-w-md w-full shadow-2xl"
-             style={{ 
-               backgroundColor: "#181C1F", 
-               border: "0.1px solid oklch(1 0 0 / 0.3)" 
-             }}>
-          <h3 className="text-xl font-bold mb-4 text-red-400 flex items-center gap-2">
-            <span>⚠️</span>
-            Leave Contest
-          </h3>
-          <p className="mb-6 text-gray-300 leading-relaxed">
-            Are you sure you want to leave the contest? Your current progress and time will be recorded.
-          </p>
-          <div className="flex justify-end gap-3">
-            <button 
-              className="px-4 py-2 rounded-lg text-gray-300 transition-all duration-200 border"
-              style={{ 
-                backgroundColor: "#181C1F", 
-                border: "0.1px solid oklch(1 0 0 / 0.3)" 
-              }}
-              onClick={() => setShowLeaveConfirmation(false)}
-            >
-              Cancel
-            </button>
-            <button 
-              className="px-4 py-2 rounded-lg text-white transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ 
-                backgroundColor: "#DC2626", 
-                border: "0.1px solid oklch(1 0 0 / 0.3)" 
-              }}
-              onClick={handleLeaveContest}
-              disabled={isLeaving}
-            >
-              {isLeaving ? (
-                <span className="loading loading-spinner loading-xs mr-2"></span>
-              ) : (
-                <span className="mr-2"></span>
-              )}
-              Confirm Leave
-            </button>
+      {/* Leave Contest Confirmation Modal */}
+      {showLeaveConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="p-6 rounded-xl max-w-md w-full shadow-2xl"
+            style={{
+              backgroundColor: "#181C1F",
+              border: "0.1px solid oklch(1 0 0 / 0.3)"
+            }}>
+            <h3 className="text-xl font-bold mb-4 text-red-400 flex items-center gap-2">
+              <span>⚠️</span>
+              Leave Contest
+            </h3>
+            <p className="mb-6 text-gray-300 leading-relaxed">
+              Are you sure you want to leave the contest? Your current progress and time will be recorded.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                className="px-4 py-2 rounded-lg text-gray-300 transition-all duration-200 border"
+                style={{
+                  backgroundColor: "#181C1F",
+                  border: "0.1px solid oklch(1 0 0 / 0.3)"
+                }}
+                onClick={() => setShowLeaveConfirmation(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg text-white transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: "#DC2626",
+                  border: "0.1px solid oklch(1 0 0 / 0.3)"
+                }}
+                onClick={handleLeaveContest}
+                disabled={isLeaving}
+              >
+                {isLeaving ? (
+                  <span className="loading loading-spinner loading-xs mr-2"></span>
+                ) : (
+                  <span className="mr-2"></span>
+                )}
+                Confirm Leave
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 };
 
 export default ContestEditorPage;

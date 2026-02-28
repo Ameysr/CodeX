@@ -1,6 +1,6 @@
 // authSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axiosClient from './utils/axiosClient';
+import axiosClient from '../../utils/axiosClient';
 
 // Helper function to create serializable error objects
 const getSerializableError = (error) => {
@@ -97,7 +97,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
       })
-  
+
       // Login User Cases
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -115,7 +115,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
       })
-  
+
       // Check Auth Cases
       .addCase(checkAuth.pending, (state) => {
         state.loading = true;
@@ -128,7 +128,7 @@ const authSlice = createSlice({
       })
       .addCase(checkAuth.rejected, (state, action) => {
         state.loading = false;
-        
+
         // Special handling for 401 - not an actual error
         if (action.payload?.isUnauthorized) {
           state.isAuthenticated = false;
@@ -140,7 +140,7 @@ const authSlice = createSlice({
           state.user = null;
         }
       })
-  
+
       // Logout User Cases
       .addCase(logoutUser.pending, (state) => {
         state.loading = true;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import axiosClient from '../utils/axiosClient';
-import { logoutUser } from '../authSlice';
+import { logoutUser } from '../store/slices/authSlice';
 
 // ✅ Define helper first
 const getDifficultyBadgeColor = (difficulty) => {
@@ -19,7 +19,7 @@ const CircularProgress = ({ value, max, size = 120, strokeWidth = 10 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / max) * circumference;
-  
+
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <svg className="w-full h-full" viewBox={`0 0 ${size} ${size}`}>
@@ -57,7 +57,7 @@ const CircularProgress = ({ value, max, size = 120, strokeWidth = 10 }) => {
 function Homepage() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const [problems, setProblems] = useState([]);
   const [solvedProblems, setSolvedProblems] = useState([]);
@@ -93,9 +93,9 @@ function Homepage() {
   const [goalLoading, setGoalLoading] = useState(true);
 
   // Scrollbar style configuration
-  const scrollbarStyle = { 
-    scrollbarWidth: 'thin', 
-    scrollbarColor: '#374151 transparent' 
+  const scrollbarStyle = {
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#374151 transparent'
   };
 
   useEffect(() => {
@@ -160,13 +160,13 @@ function Homepage() {
     dispatch(logoutUser());
     setSolvedProblems([]);
   };
-     
+
   const filteredProblems = problems.filter((problem) => {
     const difficultyMatch =
       filters.difficulty === 'all' || problem.difficulty === filters.difficulty;
 
     const tagMatch =
-      filters.tag === 'all' || 
+      filters.tag === 'all' ||
       (Array.isArray(problem.tags) && problem.tags.includes(filters.tag));
 
     const statusMatch =
@@ -272,15 +272,15 @@ function Homepage() {
   const renderPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = startPage + maxVisiblePages - 1;
-    
+
     if (endPage > totalPages) {
       endPage = totalPages;
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-    
+
     if (startPage > 1) {
       pages.push(
         <button
@@ -291,7 +291,7 @@ function Homepage() {
           1
         </button>
       );
-      
+
       if (startPage > 2) {
         pages.push(
           <span key="start-ellipsis" className="px-2 text-gray-400">
@@ -300,7 +300,7 @@ function Homepage() {
         );
       }
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
@@ -312,7 +312,7 @@ function Homepage() {
         </button>
       );
     }
-    
+
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         pages.push(
@@ -321,7 +321,7 @@ function Homepage() {
           </span>
         );
       }
-      
+
       pages.push(
         <button
           key={totalPages}
@@ -332,31 +332,31 @@ function Homepage() {
         </button>
       );
     }
-    
+
     return pages;
   };
   const getContestStatus = (contest) => {
-  const now = new Date();
-  const start = new Date(contest.startDate);
-  const end = new Date(contest.endDate);
-  
-  if (now < start) return { status: 'upcoming', badge: 'bg-yellow-500/20 text-yellow-400' };
-  if (now >= start && now <= end) return { status: 'active', badge: 'bg-green-500/20 text-green-400' };
-  return { status: 'ended', badge: 'bg-red-500/20 text-red-400' };
-};
+    const now = new Date();
+    const start = new Date(contest.startDate);
+    const end = new Date(contest.endDate);
+
+    if (now < start) return { status: 'upcoming', badge: 'bg-yellow-500/20 text-yellow-400' };
+    if (now >= start && now <= end) return { status: 'active', badge: 'bg-green-500/20 text-green-400' };
+    return { status: 'ended', badge: 'bg-red-500/20 text-red-400' };
+  };
 
 
   return (
-    <div 
-      className="min-h-screen" 
-      style={{ 
-        backgroundColor: "oklch(0.145 0 0)", 
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundColor: "oklch(0.145 0 0)",
         color: "oklch(0.8 0 0)",
         ...scrollbarStyle
       }}
     >
       {/* Scrollbar styles for Webkit browsers */}
-        <style>{`
+      <style>{`
         /* Global scrollbar styles */
         ::-webkit-scrollbar {
           width: 6px;
@@ -435,39 +435,39 @@ function Homepage() {
         >
           CodeX
         </NavLink>
-        
+
         <div className="flex items-center gap-4">
           {/* Virtual Interview Button */}
-          <NavLink 
-            to="/home" 
+          <NavLink
+            to="/home"
             className="px-4 py-2 rounded-lg font-medium text-white text-x transition-all duration-200 hover:scale-105"
           >
             Problems
           </NavLink>
 
-          <NavLink 
-            to="/interview" 
+          <NavLink
+            to="/interview"
             className="px-4 py-2 rounded-lg font-medium text-white text-x transition-all duration-200 hover:scale-105"
           >
             Virtual Interview
           </NavLink>
 
-          <NavLink 
-            to="/resume" 
+          <NavLink
+            to="/resume"
             className="px-4 py-2 rounded-lg font-medium text-white text-x transition-all duration-200 hover:scale-105"
           >
             Resume Building
           </NavLink>
 
-          <NavLink 
-            to="/dashboard" 
+          <NavLink
+            to="/dashboard"
             className="px-4 py-2 rounded-lg font-medium text-white text-x transition-all duration-200 hover:scale-105"
           >
             Dashboard
           </NavLink>
 
-          <NavLink 
-            to="/promote" 
+          <NavLink
+            to="/promote"
             className="px-4 py-2 rounded-lg font-medium text-white text-x transition-all duration-200 hover:scale-105"
           >
             Promote
@@ -636,7 +636,7 @@ function Homepage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {contests.map((contest) => {
                     const { status, badge } = getContestStatus(contest);
-                    
+
                     return (
                       <div
                         key={contest._id}
@@ -651,7 +651,7 @@ function Homepage() {
                             {status.toUpperCase()}
                           </span>
                         </div>
-                        
+
                         <div className="flex mt-3 text-sm text-gray-300">
                           <div className="mr-6">
                             <div className="text-xs uppercase mb-1 text-gray-400">Starts</div>
@@ -699,21 +699,21 @@ function Homepage() {
 
               {/* Filters */}
               <div className="flex flex-wrap gap-4 my-6">
-                <select 
+                <select
                   className="px-4 py-2 rounded-lg font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{ backgroundColor: "oklch(0.145 0 0)", color: "oklch(0.8 0 0)" }}
                   value={filters.status}
-                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                 >
                   <option value="all">All Problems</option>
                   <option value="solved">Solved Problems</option>
                 </select>
 
-                <select 
+                <select
                   className="px-4 py-2 rounded-lg font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{ backgroundColor: "oklch(0.145 0 0)", color: "oklch(0.8 0 0)" }}
                   value={filters.difficulty}
-                  onChange={(e) => setFilters({...filters, difficulty: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, difficulty: e.target.value })}
                 >
                   <option value="all">All Difficulties</option>
                   <option value="easy">Easy</option>
@@ -721,11 +721,11 @@ function Homepage() {
                   <option value="hard">Hard</option>
                 </select>
 
-                <select 
+                <select
                   className="px-4 py-2 rounded-lg font-medium border-0 focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{ backgroundColor: "oklch(0.145 0 0)", color: "oklch(0.8 0 0)" }}
                   value={filters.tag}
-                  onChange={(e) => setFilters({...filters, tag: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
                 >
                   <option value="all">All Tags</option>
                   <option value="array">Array</option>
@@ -777,8 +777,8 @@ function Homepage() {
                               <span className="mr-2 font-mono text-lg text-gray-400">
                                 {(currentPage - 1) * problemsPerPage + index + 1}
                               </span>
-                              <NavLink 
-                                to={`/problem/${problem._id}`} 
+                              <NavLink
+                                to={`/problem/${problem._id}`}
                                 className="font-medium text-white hover:text-blue-400 transition-colors"
                               >
                                 {problem.title}
@@ -821,32 +821,30 @@ function Homepage() {
                 <div className="text-gray-400 text-sm">
                   Page {currentPage} of {totalPages}
                 </div>
-                
+
                 <div className="flex gap-2">
                   <button
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      currentPage === 1 
-                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === 1
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
+                      }`}
                   >
                     Previous
                   </button>
-                  
+
                   <div className="flex gap-1">
                     {renderPageNumbers()}
                   </div>
-                  
+
                   <button
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                      currentPage === totalPages 
-                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${currentPage === totalPages
+                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                         : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
+                      }`}
                   >
                     Next
                   </button>
@@ -862,52 +860,52 @@ function Homepage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="rounded-xl shadow-2xl p-6 w-full max-w-md m-4" style={{ backgroundColor: "#131516", border: "0.1px solid oklch(1 0 0 / 0.3)", color: "oklch(0.8 0 0)" }}>
             <h2 className="text-xl font-bold mb-6 text-blue-400">Set Your Coding Goal</h2>
-            
+
             <div className="space-y-4">
               {/* Daily Problems */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">
                   Problems per day
                 </label>
-                <select 
+                <select
                   className="w-full px-4 py-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{ backgroundColor: "oklch(0.145 0 0)", color: "oklch(0.8 0 0)" }}
                   value={goalData.dailyProblems}
-                  onChange={(e) => setGoalData({...goalData, dailyProblems: e.target.value})}
+                  onChange={(e) => setGoalData({ ...goalData, dailyProblems: e.target.value })}
                 >
                   {[1, 2, 3, 4, 5].map(num => (
                     <option key={num} value={num}>{num} problem{num > 1 ? 's' : ''}</option>
                   ))}
                 </select>
               </div>
-              
+
               {/* Duration */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">
                   Duration (days)
                 </label>
-                <select 
+                <select
                   className="w-full px-4 py-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{ backgroundColor: "oklch(0.145 0 0)", color: "oklch(0.8 0 0)" }}
                   value={goalData.duration}
-                  onChange={(e) => setGoalData({...goalData, duration: e.target.value})}
+                  onChange={(e) => setGoalData({ ...goalData, duration: e.target.value })}
                 >
                   {[3, 7, 14, 21, 30].map(days => (
                     <option key={days} value={days}>{days} days</option>
                   ))}
                 </select>
               </div>
-              
+
               {/* Difficulty */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">
                   Difficulty Focus
                 </label>
-                <select 
+                <select
                   className="w-full px-4 py-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{ backgroundColor: "oklch(0.145 0 0)", color: "oklch(0.8 0 0)" }}
                   value={goalData.difficulty}
-                  onChange={(e) => setGoalData({...goalData, difficulty: e.target.value})}
+                  onChange={(e) => setGoalData({ ...goalData, difficulty: e.target.value })}
                 >
                   <option value="all">Any Difficulty</option>
                   <option value="easy">Easy</option>
@@ -915,7 +913,7 @@ function Homepage() {
                   <option value="hard">Hard</option>
                 </select>
               </div>
-              
+
               {/* Tags */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">
@@ -924,15 +922,15 @@ function Homepage() {
                 <div className="flex flex-wrap gap-2">
                   {availableTags.map(tag => (
                     <label key={tag} className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-blue-500"
                         checked={goalData.tags.includes(tag)}
                         onChange={(e) => {
                           const newTags = e.target.checked
                             ? [...goalData.tags, tag]
                             : goalData.tags.filter(t => t !== tag);
-                          setGoalData({...goalData, tags: newTags});
+                          setGoalData({ ...goalData, tags: newTags });
                         }}
                       />
                       <span className="text-sm capitalize text-gray-300">{tag}</span>
@@ -940,7 +938,7 @@ function Homepage() {
                   ))}
                 </div>
               </div>
-              
+
               {/* Start Date */}
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">
@@ -951,19 +949,19 @@ function Homepage() {
                   className="w-full px-4 py-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{ backgroundColor: "oklch(0.145 0 0)", color: "oklch(0.8 0 0)" }}
                   value={goalData.startDate}
-                  onChange={(e) => setGoalData({...goalData, startDate: e.target.value})}
+                  onChange={(e) => setGoalData({ ...goalData, startDate: e.target.value })}
                 />
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-3 mt-8">
-              <button 
+              <button
                 className="px-4 py-2 rounded-lg font-medium bg-gray-600/80 hover:bg-gray-700/80 text-white transition-all duration-200"
                 onClick={() => setShowGoalPopup(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="px-4 py-2 rounded-lg font-medium bg-blue-500/80 hover:bg-blue-600/80 text-white transition-all duration-200"
                 onClick={handleSaveGoal}
               >

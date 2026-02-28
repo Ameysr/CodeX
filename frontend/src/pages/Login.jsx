@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, NavLink } from 'react-router';
-import { loginUser, clearError } from "../authSlice";
+import { loginUser, clearError } from "../store/slices/authSlice";
 
 const loginSchema = z.object({
   emailId: z.string().email("Invalid Email"),
